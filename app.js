@@ -33,8 +33,8 @@ const STORY=[
  ["O Caçador","Você já não reage aos desafios, você vai atrás deles. Os bosses ficam mais duros e a definição começa a aparecer de verdade."],
  ["O Monarca","Os resultados são visíveis. Agora a missão é proteger o que você construiu e lapidar os últimos detalhes."],
  ["O Deus","A prova final. Trinta dias para fechar a campanha do jeito que você imaginou no dia 1."]];
-const SIDE={sem:["Caminhar 15 minutos no dia","Preparar a marmita de amanhã","Alongar 10 minutos antes de dormir","Escrever uma vitória no diário","Treinar uma técnica nova por 5 minutos","Subir de escada em vez de elevador","Comer uma fruta no lanche"],
- fds:["Mobilidade 10 minutos","Escrever uma vitória no diário","Preparar as marmitas da semana","Alongamento de 15 minutos","Organizar a mochila de treino da semana"]};
+const SIDE={sem:["Caminhar 15 minutos no dia","Preparar a marmita de amanhã","Alongar 10 minutos antes de dormir","Escrever uma vitória no diário","Treinar uma técnica nova por 5 minutos","Subir de escada em vez de elevador","Comer uma fruta no lanche","Treinar 10 minutos de um movimento novo","Ler um capítulo de um livro","Aprender um conhecimento novo e anotar no diário"],
+ fds:["Mobilidade 10 minutos","Escrever uma vitória no diário","Preparar as marmitas da semana","Alongamento de 15 minutos","Organizar a mochila de treino da semana","Treinar 10 minutos de um movimento novo","Ler um capítulo de um livro","Aprender um conhecimento novo e anotar no diário"]};
 function sideFor(n){const wd=dateOf(n).getDay(),p=(wd===0||wd===6)?SIDE.fds:SIDE.sem;return p[hash(n*13+5)%p.length];}
 function emPeriods(){return (S.perfil.emergencia&&S.perfil.emergencia.periodos)||[];}
 function emergencyOn(n){const d=isoD(dateOf(n));return emPeriods().find(p=>p.inicio<=d&&(!p.fim||d<=p.fim))||null;}
@@ -85,8 +85,9 @@ const POOL={
        L=>["Mobilidade: "+(15+L*3)+" minutos","Quadril, ombros e coluna, no chão da sala."]]
 };
 const isMBoss=n=>n%30===0;
-const isSBoss=n=>n>=5&&n<=179&&!isMBoss(n)&&hash(n)%8===0;
-function sboss(n){const wd=dateOf(n).getDay(),L=phaseOf(n);const p=(wd===0||wd===6)?POOL.casa:(wd===1||wd===3)?POOL.luta:POOL.gym;const[t,d]=p[hash(n*7+3)%p.length](L);return{t,d};}
+const isKickSat=n=>n>=6&&n<=179&&!isMBoss(n)&&dateOf(n).getDay()===6&&hash(n*3+1)%3===0;
+const isSBoss=n=>n>=5&&n<=179&&!isMBoss(n)&&(hash(n)%8===0||isKickSat(n));
+function sboss(n){if(isKickSat(n))return{t:"Aula de kickboxing de sábado, 10h30 às 12h",d:"Sábado fora de casa: vale como o desafio do dia."};const wd=dateOf(n).getDay(),L=phaseOf(n);const p=(wd===0||wd===6)?POOL.casa:(wd===1||wd===3)?POOL.luta:POOL.gym;const[t,d]=p[hash(n*7+3)%p.length](L);return{t,d};}
 const HABITS=["Proteína em todas as refeições","Registrar 2 refeições ou mais","Beber 2 litros de água","Dormir 7 horas ou mais"];
 
 function adaptSat(n,base){let f=1;const prev=[n-7,n-14].filter(x=>x>=1&&x<n&&x<=TODAY());
@@ -103,9 +104,8 @@ function missionFor(n){
   else {m={tipo:"casa",titulo:"Domingo em casa",tasks:["Mobilidade 10 minutos","Shadow boxing "+(3+Math.floor(L/2))+" rounds de 2 min","Abdominal bicicleta 3x"+(20+L*4),"Prancha lateral 2x"+(20+L*8)+"s de cada lado"],ex:[null,null,null,null],nota:"Sem sair de casa. Use o cronômetro da aba Treino."};
     if(n%14===0){m.tasks.push("Check-in: peso e cintura de manhã");m.ex.push(null);}}
   if(n===1){m={tipo:"luta",titulo:"Aula experimental: kickboxing",tasks:["Ir na aula experimental de kickboxing","Fotos de base tiradas","Contar ao Coach como foi"],ex:[null,null,null],nota:"Primeiro dia da campanha. Só aparecer já vale."};}
-  if(n===2){m={tipo:"luta",titulo:"Aula experimental: jiu-jitsu",tasks:["Ir na aula experimental de jiu-jitsu","Superior A, se der tempo"],ex:[null,null],nota:"Repare no professor, no clima da turma e no horário."};}
-  if(n===3){m={tipo:"luta",titulo:"Aula experimental: muay thai",tasks:["Ir na aula experimental de muay thai","Escolher a luta e fechar matrícula"],ex:[null,null],nota:"A melhor luta é a que você ainda vai estar fazendo em março."};}
-  if(n===4){const P=PLAN[2];m={tipo:"academia",titulo:"Superior A",tasks:P.ex.map(e=>e.n+" "+e.s+"x"+e.lo+"-"+e.hi+(e.tempo?"s":"")).concat(["Registrar as cargas na aba Treino"]),ex:P.ex.concat([null]),nota:"Semana 1: a perna foi no domingo, então quinta vira superior."};}
+  if(n===2){m={tipo:"luta",titulo:"Aula experimental: jiu-jitsu",tasks:["Ir na aula experimental de jiu-jitsu","Contar ao Coach como foi a aula"],ex:[null,null],nota:"Repare no professor, no clima da turma e no horário."};}
+  if(n===3){const P=PLAN[2];m={tipo:"academia",titulo:"Superior A",tasks:P.ex.map(e=>e.n+" "+e.s+"x"+e.lo+"-"+e.hi+(e.tempo?"s":"")).concat(["Registrar as cargas na aba Treino"]),ex:P.ex.concat([null]),nota:"Semana 1: quarta vira academia. Quinta inferior, sexta superior."};}
   if(returning(n)&&m.tipo==="academia")m.nota="Retomada depois da recuperação: faça 1 série a menos em cada exercício. "+m.nota;
   if(isMBoss(n)){m.boss=true;m.titulo="Chefão da fase "+(L+1)+": "+m.titulo;["Teste: máximo de flexões seguidas","Teste: prancha máxima","Peso e todas as medidas","Fotos frente, perfil e costas para o novo scan"].forEach(t=>{m.tasks.push(t);m.ex.push(null);});}
   m.livre=wd===6;
@@ -561,7 +561,7 @@ function md(t){const lines=esc(t).split("\n");let h="",inList=false;
   if(inList)h+="</ul>";return h;}
 function dataSummary(days){
   const t=Math.min(TOTAL,TODAY()),lines=[];
-  lines.push(`AJUSTE DA SEMANA 1: perna treinada no domingo 08/11, então quinta 12/11 é Superior A e sexta Superior B.`);
+  lines.push(`SEMANA 1: seg 09/11 aula experimental de kickboxing (ele gostou), ter 10/11 aula experimental de jiu-jitsu, qua 11/11 Superior A, qui 12/11 Inferior + core, sex 13/11 Superior B. Depois segue a rotina: seg e qua luta, ter/qui/sex academia, fim de semana em casa. Alguns sábados têm boss surpresa de aula de kickboxing das 10h30 às 12h.`);
   lines.push(`PERFIL: Vitor, 21 anos, 1,76 m. Começou em 09/11/2026 com 90 kg (tinha 110 no início do ano, chegou a 86, ficou 2 meses parado após cirurgia de fimose). Meta: 75 kg até 07/05/2027 (180 dias). Usa Mounjaro com acompanhamento médico e relata comer por ansiedade. Rotina: seg e qua luta, ter/qui/sex academia, fim de semana treinos em casa. Trabalha 9h-16h e faz faculdade.`);
   lines.push(`HOJE: dia ${t} de 180 (${brD(new Date())}). Peso atual registrado ${fmt(curW())} kg. Rota planejada hoje ${fmt(plannedW(t))} kg. Sequência ${streak()} dias. Bosses vencidos ${bossesBeaten().t}.`);
   lines.push("CHECK-INS: "+(checkins().map(c=>`${brS(parseISO(c.d))} ${fmt(c.w)}kg${c.waist?" cintura "+c.waist:""}`).join("; ")||"nenhum"));

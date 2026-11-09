@@ -8,8 +8,7 @@ dow = hoje.weekday()  # 0 = segunda
 quests = {0: "dia de luta", 1: "Superior A na academia", 2: "dia de luta", 3: "Inferior + core na academia",
           4: "Superior B na academia", 5: "desafio em casa (e refeição livre)", 6: "treino em casa"}
 especiais = {datetime.date(2026, 11, 10): "aula experimental de jiu-jitsu",
-             datetime.date(2026, 11, 11): "aula experimental de muay thai",
-             datetime.date(2026, 11, 12): "Superior A na academia"}
+             datetime.date(2026, 11, 11): "Superior A na academia"}
 quest = especiais.get(hoje, quests[dow])
 if n < 1:
     titulo, msg = "Físico dos Deuses", "A campanha ainda não começou."
