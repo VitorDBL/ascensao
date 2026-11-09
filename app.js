@@ -87,6 +87,7 @@ const POOL={
 const isMBoss=n=>n%30===0;
 const isKickSat=n=>n>=6&&n<=179&&!isMBoss(n)&&dateOf(n).getDay()===6&&hash(n*3+1)%3===0;
 const isSBoss=n=>n>=5&&n<=179&&!isMBoss(n)&&(hash(n)%8===0||isKickSat(n));
+const kickRevealed=n=>isKickSat(n)&&(n<=TODAY()||(n-1<=TODAY()&&dayDone(n-1)));
 function sboss(n){if(isKickSat(n))return{t:"Aula de kickboxing de sábado, 10h30 às 12h",d:"Sábado fora de casa: vale como o desafio do dia."};const wd=dateOf(n).getDay(),L=phaseOf(n);const p=(wd===0||wd===6)?POOL.casa:(wd===1||wd===3)?POOL.luta:POOL.gym;const[t,d]=p[hash(n*7+3)%p.length](L);return{t,d};}
 const HABITS=["Proteína em todas as refeições","Registrar 2 refeições ou mais","Beber 2 litros de água","Dormir 7 horas ou mais"];
 
@@ -307,7 +308,7 @@ function renderSistema(){
   let extra="";
   if(penaltyFor(n)&&!d.rest){extra+=`<div class="bossbox pen"><span class="chip c-heat">Quest de penalidade · evita −100 XP</span><h3>${15+L*5} burpees + prancha ${fmt(1+L*.5,1).replace(",0","")} min</h3><p class="note">A quest de ontem ficou incompleta. Cumpra hoje para não perder XP.</p><label class="ck" style="border:0;padding:2px 0"><input type="checkbox" id="penChk" ${d.p?"checked":""} ${future?"disabled":""}><span class="t">Penalidade cumprida</span></label></div>`;}
   if(isSBoss(n)&&!m.recup){
-    if(future)extra+=`<div class="bossbox locked"><span class="eyebrow">Sinal desconhecido</span><p>Algo pode estar esperando neste dia. Você só vai saber quando chegar.</p></div>`;
+    if(future&&!kickRevealed(n))extra+=`<div class="bossbox locked"><span class="eyebrow">Sinal desconhecido</span><p>Algo pode estar esperando neste dia. Você só vai saber quando chegar.</p></div>`;
     else{const b=sboss(n),anim=isToday&&!revealed.has(n);revealed.add(n);
       extra+=`<div class="bossbox${anim?" reveal":""}"><span class="chip c-boss">Boss surpresa · +${XP.sboss} XP</span><h3>${esc(b.t)}</h3><p class="note">${esc(b.d)} Fora da rotina, além da quest do dia.</p><label class="ck" style="border:0;padding:2px 0"><input type="checkbox" id="sbChk" ${d.b?"checked":""}><span class="t">Boss derrotado</span></label></div>`;
       if(anim)setTimeout(()=>pop("Alerta do Sistema","Um boss surpresa apareceu","boss"),400);}
@@ -325,6 +326,7 @@ function renderSistema(){
    <div class="checks">${m.tasks.map((x,i)=>`<label class="ck${d.t&&d.t[i]?" done":""}"><input type="checkbox" data-t="${i}" ${d.t&&d.t[i]?"checked":""} ${future||d.rest?"disabled":""}><span class="t"><span>${esc(x)}</span>${m.ex[i]?`<span class="hint">${esc(suggest(m.ex[i]))}</span>`:""}</span><span class="xp">+${XP.task}</span></label>`).join("")}</div>
    ${restBox}${extra}
    ${!m.recup?`<div class="side"><span class="eyebrow">Quest secundária · opcional · +${XP.side} XP</span><label class="ck" style="border:0;padding:0"><input type="checkbox" id="sideChk" ${d.s?"checked":""} ${future?"disabled":""}><span class="t">${esc(sideFor(n))}</span></label></div>`:""}
+   ${isKickSat(n+1)&&n<=t?(dayDone(n)?`<div class="bossbox reveal"><span class="chip c-boss">Boss de amanhã revelado · +${XP.sboss} XP</span><h3>Aula de kickboxing de sábado, 10h30 às 12h</h3><p class="note">Como é de manhã, o Sistema avisa hoje. Separe a roupa e a luva.</p></div>`:`<div class="bossbox locked"><span class="eyebrow">Sinal detectado para amanhã cedo</span><p>Conclua a quest de hoje para revelar o boss de sábado.</p></div>`):""}
    ${m.livre?`<div class="livre">Sábado tem refeição livre: uma refeição, sem culpa, e a próxima volta ao normal. Registre em Nutrição marcando como livre.</div>`:""}
    <div><div class="sub">Hábitos · +${XP.habit} cada</div><div class="checks">${HABITS.map((x,i)=>i===0?`<label class="ck${hs[0]?" done":""}"><input type="checkbox" id="h0" ${hs[0]?"checked":""} ${future?"disabled":""}><span class="t">${x}</span></label>`:`<div class="ck auto${hs[i]?" done":""}"><input type="checkbox" disabled ${hs[i]?"checked":""} aria-label="${x}"><span class="t"><span>${x}</span><span class="hint">${["","Conta sozinho pelas refeições registradas","Conta sozinho pela água do dia","Conta sozinho pelo sono registrado"][i]}</span></span></div>`).join("")}</div></div>
    <div class="eyebrow">XP do dia: <span class="mono">${dayXP(n)}</span></div>`;
@@ -332,7 +334,7 @@ function renderSistema(){
   $("#dNext").onclick=()=>{viewDay=Math.min(TOTAL,n+1);renderSistema();};
   $("#dToday").onclick=()=>{viewDay=Math.min(TOTAL,Math.max(1,TODAY()));renderSistema();};
   $$("#questCard [data-t]").forEach(el=>el.onchange=()=>{const was=dayDone(n);patchDay(n,doc=>{doc.t[+el.dataset.t]=el.checked;});
-    if(!was&&dayDone(n))pop(m.boss?"Chefão derrotado":"Quest completa",m.boss?"+"+(XP.mboss+XP.full)+" XP":"+"+XP.full+" XP bônus",m.boss?"boss":"");});
+    if(!was&&dayDone(n)){if(isKickSat(n+1))setTimeout(()=>pop("Boss de amanhã revelado","Kickboxing sábado 10h30","boss"),1600);pop(m.boss?"Chefão derrotado":"Quest completa",m.boss?"+"+(XP.mboss+XP.full)+" XP":"+"+XP.full+" XP bônus",m.boss?"boss":"");}});
   const h0=$("#h0");if(h0)h0.onchange=()=>patchDay(n,doc=>{doc.h[0]=h0.checked;});
   const sb=$("#sbChk");if(sb)sb.onchange=()=>{patchDay(n,doc=>{doc.b=sb.checked;});if(sb.checked)pop("Boss derrotado","+"+XP.sboss+" XP","boss");};
   const sc=$("#sideChk");if(sc)sc.onchange=()=>{patchDay(n,doc=>{doc.s=sc.checked;});if(sc.checked)pop("Quest secundária","+"+XP.side+" XP");};
@@ -681,8 +683,8 @@ $("#patBtn").onclick=async()=>{if(!SAMPLE){$("#patBox").innerHTML=`<p class="not
 // ================= JORNADA =================
 function renderJornada(){const t=TODAY();
   $("#levels").innerHTML=PHASES.map((name,L)=>{let cells="",dl=0;for(let n=L*30+1;n<=L*30+30;n++){const d=dayDoc(n),done=dayDone(n),fut=n>t;if(done)dl++;
-      const cls="cell"+(d.rest?" rest":done?" done":dayPart(n)?" part":n<t?" miss":"")+(n===t?" today":"")+(isMBoss(n)?" mboss":"")+(isSBoss(n)&&!fut?" sboss":"");
-      cells+=`<button class="${cls}" data-n="${n}" title="Dia ${n} · ${brD(dateOf(n))}">${isMBoss(n)?"B":isSBoss(n)&&!fut?"!":n}</button>`;}
+      const cls="cell"+(d.rest?" rest":done?" done":dayPart(n)?" part":n<t?" miss":"")+(n===t?" today":"")+(isMBoss(n)?" mboss":"")+(isSBoss(n)&&(!fut||kickRevealed(n))?" sboss":"");
+      cells+=`<button class="${cls}" data-n="${n}" title="Dia ${n} · ${brD(dateOf(n))}">${isMBoss(n)?"B":isSBoss(n)&&(!fut||kickRevealed(n))?"!":n}</button>`;}
     return `<div class="lvl"><div class="lvl-h"><b>Fase ${L+1} · ${name}</b><span class="eyebrow">${brS(dateOf(L*30+1))} a ${brS(dateOf(L*30+30))} · ${dl}/30</span></div><div class="cells">${cells}</div></div>`;}).join("");
   $$("#levels .cell").forEach(c=>c.onclick=()=>{viewDay=+c.dataset.n;location.hash="sistema";});
   const ps=Object.entries(S.projetos).map(([id,p])=>({...p,_id:id}));
