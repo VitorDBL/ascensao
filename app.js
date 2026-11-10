@@ -216,14 +216,14 @@ function makeSample(){
     if(merged.length&&merged[0].role!=="user")merged.unshift({role:"user",parts:[{text:"(início)"}]});
     if(images){const arr=images instanceof Blob?[images]:[...images];const last=merged[merged.length-1];for(const im of arr){const b=await compressImage(im,1024,.8);last.parts.push({inlineData:{mimeType:b.type||"image/jpeg",data:await AI.b64(b)}});}}
     return merged;};
-  const textOf=res=>{const c=res.candidates&&res.candidates[0];if(!c){throw{code:"refused",message:"sem resposta"};}return (c.content&&c.content.parts||[]).filter(p=>p.text).map(p=>p.text).join("");};
+  const textOf=res=>{const c=res.candidates&&res.candidates[0];if(!c){throw{code:"refused",message:"sem resposta"};}return (c.content&&c.content.parts||[]).filter(p=>p.text&&!p.thought).map(p=>p.text).join("");};
   const fn=async(input,opts={})=>{if(!AI.key())throw{code:"not_granted"};
     const contents=await toContents(input,opts.images);const body={contents,generationConfig:{temperature:.7}};
     if(opts.tools&&opts.tools.length)body.tools=[{functionDeclarations:opts.tools.map(t=>({name:t.name,description:t.description,...(t.inputSchema?{parameters:AI.toSchema(t.inputSchema)}:{})}))}];
     let out="";for(let round=0;round<6;round++){
       const res=await AI.call(body,opts.signal);const cand=res.candidates&&res.candidates[0];if(!cand)throw{code:"refused"};
       const parts=(cand.content&&cand.content.parts)||[];const calls=parts.filter(p=>p.functionCall);
-      const txt=parts.filter(p=>p.text).map(p=>p.text).join("");if(txt){out+=(out?"\n\n":"")+txt;opts.onText&&opts.onText({text:out,delta:txt});}
+      const txt=parts.filter(p=>p.text&&!p.thought).map(p=>p.text).join("");if(txt){out+=(out?"\n\n":"")+txt;opts.onText&&opts.onText({text:out,delta:txt});}
       if(!calls.length||!opts.tools)break;
       body.contents.push({role:"model",parts});
       const resp=[];for(const p of calls){const t=opts.tools.find(x=>x.name===p.functionCall.name);let result;try{result=t?await t.execute(p.functionCall.args||{},{signal:opts.signal}):"ferramenta desconhecida";}catch(e){result="Erro: "+(e.message||e);}
@@ -491,7 +491,21 @@ $("#upBtn").onclick=async()=>{const f=$("#upFile").files[0],ang=$("#upAngle").va
 // ================= TREINO =================
 let curEx=null;
 function nextGymDay(){for(let k=0;k<8;k++){const d=new Date();d.setDate(d.getDate()+k);const n=nOf(d);if(PLAN[d.getDay()]&&n>=1&&n<=TOTAL&&!(k===0&&dayDone(n)))return{d,n,P:PLAN[d.getDay()]};}return null;}
-function renderTreino(){
+// leitura local do treino (funciona sem o Gemini)
+function parseTreinoLocal(texto){
+  const segs=String(texto).split(/\n|;|(?<=kg)\s+(?=[A-ZÁÉÍÓÚÂÊÔÃÕÇ])|(?<=\d)\s*\.\s+(?=[A-ZÁÉÍÓÚÂÊÔÃÕÇ])/).map(x=>x.trim()).filter(Boolean);
+  const ex=[];
+  segs.forEach(sg=>{const n=normEx(sg);if(!Object.values(GROUPS).some(ks=>ks.some(k=>n.includes(k))))return;
+    let nome=sg.split(/\s(?=\d)|\s(?:com|na|no|fiz|de|em)\s/i)[0].replace(/[,:.\-]+$/,"").trim().toLowerCase();if(!nome)return;
+    const sr=sg.match(/(\d+)\s*[xX×]\s*(\d+)/);const kgPart=sg.match(/((?:\d+(?:[.,]\d+)?\s*(?:,|e)?\s*)+)kg/i);
+    let carga=null;if(kgPart){const nums=(kgPart[1].match(/\d+(?:[.,]\d+)?/g)||[]).map(v=>+v.replace(",",".")).filter(v=>v>0&&v<500);if(nums.length)carga=Math.max(...nums);}
+    ex.push({nome:nome.slice(0,60),series:sr?+sr[1]:3,reps:sr?+sr[2]:null,carga_kg:carga});});
+  const luta=/luta|kick|jiu|muay|boxe|sparr|kimono|tatame|chute|soco|raspagem|guarda|finaliza/i.test(texto);
+  const tipo=ex.length>=2||(!luta&&ex.length)?"academia":luta?"luta":"outro";
+  const mod=tipo==="academia"?"musculação":/jiu/i.test(texto)?"jiu-jitsu":/kick/i.test(texto)?"kickboxing":/muay/i.test(texto)?"muay thai":tipo==="luta"?"luta":"";
+  return{tipo,modalidade:mod,minutos:null,intensidade:3,exercicios:ex.slice(0,20),tecnicas:[],resumo:ex.length?ex.length+" exercícios registrados":"",local:true};}
+let _fixT=false;function fixTreinos(){if(_fixT)return;_fixT=true;Object.entries(S.treinos).forEach(([id,w])=>{if(w&&w.texto&&(!w.p||(w.p.local&&!w.p.exercicios.length))){const p=parseTreinoLocal(w.texto);if(p.exercicios.length||p.tipo!=="outro")put("treinos",id,{...w,p},{noUndo:true});}});}
+function renderTreino(){if(loaded)setTimeout(fixTreinos,0);
   const ng=nextGymDay();
   $("#nextCard").innerHTML=ng?`<div class="sys-title">Próximo treino</div><div class="head"><h2>${esc(ng.P.t)}</h2><span class="eyebrow">${DOW[ng.d.getDay()]} ${brS(ng.d)}</span></div>
     <div class="list">${ng.P.ex.map(e=>`<div class="item"><div><div class="ttl">${esc(e.n)} <span class="mono note">${e.s}x${e.lo}-${e.hi}${e.tempo?"s":""}</span></div><div class="meta" style="color:var(--ice)">${esc(suggest(e))}</div></div></div>`).join("")}</div>
@@ -525,6 +539,7 @@ $("#tBtn").onclick=async()=>{const texto=$("#tText").value.trim();$("#tErr").tex
   try{if(SAMPLE){try{const p=await SAMPLE.json(`Organize o treino descrito abaixo. Responda só com JSON: {"tipo":"academia" ou "luta" ou "cardio" ou "outro","modalidade":"ex.: musculação, muay thai, kickboxing, jiu-jitsu","minutos":número ou null,"intensidade":inteiro de 1 a 5,"exercicios":[{"nome":"nome padronizado em português, minúsculo, sem carga","series":número ou null,"reps":número (repetições, ou segundos se for isometria) ou null,"carga_kg":número ou null}],"tecnicas":["técnicas de luta treinadas, curtas, em português"],"resumo":"uma frase curta e específica sobre o treino, tom de treinador"}. Se for luta, exercicios pode ficar vazio. Use a maior carga citada por exercício.\n\nTreino: ${texto}`,{modelTier:"quick"});
       if(p&&typeof p==="object")rec.p={tipo:["academia","luta","cardio","outro"].includes(p.tipo)?p.tipo:"outro",modalidade:String(p.modalidade||"").slice(0,40),minutos:+p.minutos||null,intensidade:Math.max(1,Math.min(5,Math.round(+p.intensidade||3))),
         exercicios:Array.isArray(p.exercicios)?p.exercicios.slice(0,20).map(e=>({nome:String(e.nome||"").slice(0,60),series:+e.series||null,reps:+e.reps||null,carga_kg:+e.carga_kg||null})):[],tecnicas:Array.isArray(p.tecnicas)?p.tecnicas.slice(0,15).map(t=>String(t).slice(0,50)):[],resumo:String(p.resumo||"").slice(0,160)};}catch(e){if(e&&e.code==="not_granted")SAMPLE=null;}}
+    if(!rec.p||(rec.p.tipo==="academia"&&!(rec.p.exercicios||[]).length)){const lp=parseTreinoLocal(texto);if(!rec.p||lp.exercicios.length)rec.p={...(rec.p||{}),...lp};}
     put("treinos",newId(),rec);$("#tText").value="";$("#tStatus").textContent="";pop("Treino registrado","+"+XP.treino+" XP");}finally{$("#tBtn").disabled=false;}};
 // cronômetro
 let tm=null,audioCtx=null;

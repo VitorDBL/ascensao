@@ -51,7 +51,7 @@ a{color:var(--ice)}
 .sub{font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ice-dim);margin-bottom:4px}
 
 /* status bar */
-.bar-top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:rgba(4,7,12,.95);border-bottom:1px solid var(--line)}
+.bar-top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:#04070C;border-bottom:1px solid var(--line)}
 .status{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;padding-block:10px 6px}
 .brand{font-family:var(--f-display);font-weight:700;font-size:17px;letter-spacing:.06em;text-transform:uppercase;margin-right:auto}
 .brand span{color:var(--ice)}
@@ -297,7 +297,7 @@ th{font-family:var(--f-mono);font-size:10px;letter-spacing:.12em;text-transform:
 .bnav{display:none}
 @media (max-width:760px){
  .tabs-scroll{display:none}
- .bnav{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;z-index:9;background:rgba(4,7,12,.97);border-top:1px solid var(--line);
+ .bnav{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;z-index:9;background:#04070C;border-top:1px solid var(--line);
    padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
  .bnav button{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;font-family:var(--f-mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);cursor:pointer}
  .bnav svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
@@ -489,7 +489,7 @@ th{font-family:var(--f-mono);font-size:10px;letter-spacing:.12em;text-transform:
       <div class="list" id="prList"></div>
     </div>
     <div class="card">
-      <div class="head"><h2>Diário de luta</h2><span class="eyebrow" id="tFightKv"></span></div>
+      <div class="head"><h2>Diário de treinos</h2><span class="eyebrow" id="tFightKv"></span></div>
       <div class="row"><label class="f">Graduação atual<input type="text" id="gradIn" maxlength="40" placeholder="Ex.: branca, prajied branco"></label><button class="btn" id="gradBtn">Salvar</button></div>
       <div><div class="sub">Técnicas aprendidas</div><div class="chips" id="tTech"></div></div>
       <div><div class="sub">Histórico</div><div class="list" id="tList"></div></div>
@@ -629,9 +629,9 @@ th{font-family:var(--f-mono);font-size:10px;letter-spacing:.12em;text-transform:
 
 
 <script>window.FDD_CONFIG={ntfyTopic:"fdd-vitor-c464ff03bb56"};</script>
-<script src="app.js?v=7"></script>
-<script src="voice.js?v=7"></script>
-<script src="extra.js?v=7"></script>
+<script src="app.js?v=8"></script>
+<script src="voice.js?v=8"></script>
+<script src="extra.js?v=8"></script>
 <script>
 go();initStore();
 if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
