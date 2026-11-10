@@ -105,8 +105,11 @@ function missionFor(n){
   else {m={tipo:"casa",titulo:"Domingo em casa",tasks:["Mobilidade 10 minutos","Shadow boxing "+(3+Math.floor(L/2))+" rounds de 2 min","Abdominal bicicleta 3x"+(20+L*4),"Prancha lateral 2x"+(20+L*8)+"s de cada lado"],ex:[null,null,null,null],nota:"Sem sair de casa. Use o cronômetro da aba Treino."};
     if(n%14===0){m.tasks.push("Check-in: peso e cintura de manhã");m.ex.push(null);}}
   if(n===1){m={tipo:"luta",titulo:"Aula experimental: kickboxing",tasks:["Ir na aula experimental de kickboxing","Fotos de base tiradas","Contar ao Coach como foi"],ex:[null,null,null],nota:"Primeiro dia da campanha. Só aparecer já vale."};}
-  if(n===2){m={tipo:"luta",titulo:"Aula experimental: jiu-jitsu",tasks:["Ir na aula experimental de jiu-jitsu","Contar ao Coach como foi a aula"],ex:[null,null],nota:"Repare no professor, no clima da turma e no horário."};}
-  if(n===3){const P=PLAN[2];m={tipo:"academia",titulo:"Superior A",tasks:P.ex.map(e=>e.n+" "+e.s+"x"+e.lo+"-"+e.hi+(e.tempo?"s":"")).concat(["Registrar as cargas na aba Treino"]),ex:P.ex.concat([null]),nota:"Semana 1: quarta vira academia. Quinta inferior, sexta superior."};}
+  const gym=(w,nota)=>{const P=PLAN[w];return{tipo:"academia",titulo:P.t,tasks:P.ex.map(e=>e.n+" "+e.s+"x"+e.lo+"-"+e.hi+(e.tempo?"s":"")).concat(["Registrar as cargas na aba Treino"]),ex:P.ex.concat([null]),nota};};
+  if(n===2)m=gym(2,"Semana 1: hoje academia, amanhã a aula experimental de jiu-jitsu.");
+  if(n===3){m={tipo:"luta",titulo:"Aula experimental: jiu-jitsu",tasks:["Ir na aula experimental de jiu-jitsu","Contar ao Coach como foi a aula"],ex:[null,null],nota:"Repare no professor, no clima da turma e no horário."};}
+  if(n===4)m=gym(5,"Semana 1: quinta superior, sexta inferior + core.");
+  if(n===5)m=gym(4,"Semana 1: sexta fecha com inferior + core.");
   if(returning(n)&&m.tipo==="academia")m.nota="Retomada depois da recuperação: faça 1 série a menos em cada exercício. "+m.nota;
   if(isMBoss(n)){m.boss=true;m.titulo="Chefão da fase "+(L+1)+": "+m.titulo;["Teste: máximo de flexões seguidas","Teste: prancha máxima","Peso e todas as medidas","Fotos frente, perfil e costas para o novo scan"].forEach(t=>{m.tasks.push(t);m.ex.push(null);});}
   m.livre=wd===6;
@@ -580,7 +583,7 @@ function md(t){const lines=esc(t).split("\n");let h="",inList=false;
   if(inList)h+="</ul>";return h;}
 function dataSummary(days){
   const t=Math.min(TOTAL,TODAY()),lines=[];
-  lines.push(`SEMANA 1: seg 09/11 aula experimental de kickboxing (ele gostou), ter 10/11 aula experimental de jiu-jitsu, qua 11/11 Superior A, qui 12/11 Inferior + core, sex 13/11 Superior B. Depois segue a rotina: seg e qua luta, ter/qui/sex academia, fim de semana em casa. Alguns sábados têm boss surpresa de aula de kickboxing das 10h30 às 12h.`);
+  lines.push(`SEMANA 1: seg 09/11 aula experimental de kickboxing (ele gostou), ter 10/11 Superior A, qua 11/11 aula experimental de jiu-jitsu, qui 12/11 Superior B, sex 13/11 Inferior + core. Depois segue a rotina: seg e qua luta, ter/qui/sex academia, fim de semana em casa. Alguns sábados têm boss surpresa de aula de kickboxing das 10h30 às 12h.`);
   lines.push(`PERFIL: Vitor, 21 anos, 1,76 m. Começou em 09/11/2026 com 90 kg (tinha 110 no início do ano, chegou a 86, ficou 2 meses parado após cirurgia de fimose). Meta: 75 kg até 07/05/2027 (180 dias). Usa Mounjaro com acompanhamento médico e relata comer por ansiedade. Rotina: seg e qua luta, ter/qui/sex academia, fim de semana treinos em casa. Trabalha 9h-16h e faz faculdade.`);
   lines.push(`HOJE: dia ${t} de 180 (${brD(new Date())}). Peso atual registrado ${fmt(curW())} kg. Rota planejada hoje ${fmt(plannedW(t))} kg. Sequência ${streak()} dias. Bosses vencidos ${bossesBeaten().t}.`);
   lines.push("CHECK-INS: "+(checkins().map(c=>`${brS(parseISO(c.d))} ${fmt(c.w)}kg${c.waist?" cintura "+c.waist:""}`).join("; ")||"nenhum"));
