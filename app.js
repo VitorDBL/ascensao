@@ -182,13 +182,24 @@ const AI={key(){return LSK.get("fdd2-gemini-key")||"";},model(){return LSK.get("
   async pickModel(){const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200",{headers:{"x-goog-api-key":this.key()}});
     if(!r.ok){let m="";try{m=(await r.json()).error.message;}catch(e){}throw{code:"key",message:m||("HTTP "+r.status)};}
     const j=await r.json();const ok=(j.models||[]).filter(m=>(m.supportedGenerationMethods||[]).includes("generateContent")).map(m=>m.name.replace(/^models\//,""))
-      .filter(n=>/flash/.test(n)&&!/image|tts|live|audio|embed|thinking-exp|preview-\d{2}-\d{2}$/.test(n));
-    const score=n=>{const v=parseFloat((n.match(/gemini-(\d+(\.\d+)?)/)||[])[1]||0);return v*10+(/latest/.test(n)?3:0)-(/lite/.test(n)?4:0)-(/preview|exp/.test(n)?2:0);};
-    ok.sort((a,b)=>score(b)-score(a));return ok[0]||null;},
-  async call(body,signal){const url="https://generativelanguage.googleapis.com/v1beta/models/"+encodeURIComponent(this.model())+":generateContent";
-    const r=await fetch(url,{method:"POST",signal,headers:{"Content-Type":"application/json","x-goog-api-key":this.key()},body:JSON.stringify(body)});
-    if(!r.ok){let msg="";try{msg=(await r.json()).error.message;}catch(e){}const code=r.status===429?"rate_limited":r.status===400&&/API key/i.test(msg)?"not_granted":r.status===403?"not_granted":r.status===404?"model":"upstream_error";throw{code,message:msg||("HTTP "+r.status)};}
-    return r.json();}};
+      .filter(n=>/flash/.test(n)&&!/image|tts|live|audio|embed|exp/.test(n));
+    const ver=n=>parseFloat((n.match(/gemini-(\d+(\.\d+)?)/)||[])[1]||0);
+    const score=n=>ver(n)*10+(/latest/.test(n)?5:0)-(/lite/.test(n)?3:0)-(/preview/.test(n)?6:0);
+    ok.sort((a,b)=>score(b)-score(a));
+    const lite=ok.filter(n=>/lite/.test(n));const list=[...new Set([ok[0],...lite.slice(0,1),...ok.slice(1,4)].filter(Boolean))];
+    LSK.set("fdd2-gemini-models",list);return list[0]||null;},
+  fallbacks(){return (LSK.get("fdd2-gemini-models")||[]).filter(m=>m!==this.model()).slice(0,3);},
+  async callOne(model,body,signal){const ctl=new AbortController();const t=setTimeout(()=>ctl.abort(),45000);
+    if(signal){if(signal.aborted)ctl.abort();else signal.addEventListener("abort",()=>ctl.abort(),{once:true});}
+    try{const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/"+encodeURIComponent(model)+":generateContent",{method:"POST",signal:ctl.signal,headers:{"Content-Type":"application/json","x-goog-api-key":this.key()},body:JSON.stringify(body)});
+      if(!r.ok){let msg="";try{msg=(await r.json()).error.message;}catch(e){}const code=r.status===429?"rate_limited":(r.status===400&&/API key/i.test(msg))||r.status===401||r.status===403?"not_granted":r.status===404?"model":"upstream_error";throw{code,message:(msg||("HTTP "+r.status)).slice(0,200),status:r.status};}
+      return await r.json();}
+    catch(e){if(e&&e.name==="AbortError")throw signal&&signal.aborted?{code:"cancelled"}:{code:"timeout",message:"o modelo demorou demais para responder"};throw e;}
+    finally{clearTimeout(t);}},
+  async call(body,signal){if(!LSK.get("fdd2-gemini-models")){try{await this.pickModel();}catch(e){}}const models=[this.model(),...this.fallbacks()];let last;
+    for(const m of models){try{const res=await this.callOne(m,body,signal);if(m!==this.model())this.used=m;return res;}
+      catch(e){last=e;if(e.code==="cancelled"||e.code==="not_granted")throw e;if(!["rate_limited","model","timeout","upstream_error"].includes(e.code))throw e;}}
+    throw last;}};
 function makeSample(){
   const toContents=async(input,images)=>{const turns=typeof input==="string"?[{role:"user",content:input}]:input;
     const contents=turns.map(t=>({role:t.role==="assistant"?"model":"user",parts:[{text:t.content}]}));
@@ -655,7 +666,7 @@ async function ask(text){if(!text)return;$("#cqErr").textContent="";
   const cur=chat[chat.length-1];
   try{const opts={signal:chatCtl.signal,modelTier:"quick",onText:({text})=>{cur.content=text;renderChat();}};if(toolsOK)opts.tools=TOOLS;else opts.cache=false;
     const r=await SAMPLE(turns,opts);cur.content=r.text.trim();speak(cur.content);}
-  catch(e){cur.content=e&&e.text?e.text:(e&&e.code==="cancelled"?"(parado)":e&&e.code==="rate_limited"?"Muitas mensagens seguidas. Espere um pouco e tente de novo.":"Não consegui responder agora.");if(e&&e.code==="not_granted")SAMPLE=null;}
+  catch(e){cur.content=e&&e.text?e.text:(e&&e.code==="cancelled"?"(parado)":e&&e.code==="rate_limited"?"Muitas mensagens seguidas. Espere um pouco e tente de novo.":"Não consegui responder agora: "+(e&&(e.message||e.code)||"erro desconhecido")+". Tente de novo em instantes.");if(e&&e.code==="not_granted")cur.content="A chave foi recusada pelo Google. Confira em Perfil › Ajustes.";}
   finally{delete cur.pending;renderChat();saveChat();$("#cqStop").hidden=true;$("#cqBtn").disabled=false;}}
 const QCH=["Bom dia! O que faço hoje?","Como foi minha semana?","Estou perdendo peso rápido demais?","Minha força está aumentando?","Qual grupo estou negligenciando?","Como está minha alimentação?","Estou recuperando bem?"];
 $("#qChips").innerHTML=QCH.map(q=>`<button class="btn sm" data-q="${esc(q)}">${esc(q)}</button>`).join("");

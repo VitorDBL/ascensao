@@ -221,8 +221,8 @@ EXTRA.perfil=()=>{
   $("#setKeyBtn").onclick=()=>{const v=$("#setKey").value.trim();if(v)LSK.set("fdd2-gemini-key",v);LSK.set("fdd2-gemini-model",$("#setModel").value.trim()||"gemini-flash-latest");$("#setKey").value="";refreshAI();$("#setKeyMsg").textContent=AI.key()?"Chave salva.":"Sem chave.";};
   $("#setKeyTest").onclick=async()=>{const msg=$("#setKeyMsg");if(!AI.key()){msg.textContent="Cole e salve a chave primeiro.";return;}msg.textContent="Procurando o melhor modelo grátis...";
     try{const pick=await AI.pickModel();if(pick){LSK.set("fdd2-gemini-model",pick);$("#setModel").value=pick;}}catch(e){msg.textContent="Falhou ao listar modelos: "+(e.message||e.code);return;}
-    refreshAI();msg.textContent="Testando "+AI.model()+"...";
-    try{const r=await SAMPLE("Responda só: Sistema online.");msg.textContent="Funcionando com "+AI.model()+": "+r.text.slice(0,60);}catch(e){msg.textContent="Falhou ("+AI.model()+"): "+(e.code==="rate_limited"?"limite grátis por minuto, tente já já":(e.message||e.code));}};
+    refreshAI();msg.textContent="Testando "+AI.model()+" (reservas: "+(AI.fallbacks().join(", ")||"nenhuma")+")...";
+    try{const r=await SAMPLE("Responda só: Sistema online.");msg.textContent="Funcionando com "+(AI.used||AI.model())+": "+r.text.slice(0,60);}catch(e){msg.textContent="Falhou ("+AI.model()+"): "+(e.code==="rate_limited"?"limite grátis por minuto, tente já já":(e.message||e.code));}};
   $("#setVoice").onchange=e=>LSK.set("fdd2-voice-engine",e.target.value);
   $("#setVoiceDl").onclick=async()=>{Voice.unlock();const m=$("#setVoiceMsg");m.textContent="Baixando a voz...";try{await Voice.download(p=>m.textContent="Baixando a voz: "+p+"%");m.textContent="Voz neural pronta e salva no aparelho.";LSK.set("fdd2-voice-engine","neural");$("#setVoice").value="neural";}catch(e){m.textContent="Não consegui baixar a voz neural: "+(e&&e.message||e)+". Use a voz do iPhone por enquanto.";}};
   $("#setVoiceTest").onclick=async()=>{Voice.unlock();const m=$("#setVoiceMsg");Voice.lastErr="";
