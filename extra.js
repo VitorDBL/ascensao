@@ -219,14 +219,16 @@ EXTRA.perfil=()=>{
    </div>`;
   $("#setVoice").value=Voice.engine();
   $("#setKeyBtn").onclick=()=>{const v=$("#setKey").value.trim();if(v)LSK.set("fdd2-gemini-key",v);LSK.set("fdd2-gemini-model",$("#setModel").value.trim()||"gemini-flash-latest");$("#setKey").value="";refreshAI();$("#setKeyMsg").textContent=AI.key()?"Chave salva.":"Sem chave.";};
-  $("#setKeyTest").onclick=async()=>{LSK.set("fdd2-gemini-model",$("#setModel").value.trim()||"gemini-flash-latest");refreshAI();if(!SAMPLE){$("#setKeyMsg").textContent="Cole e salve a chave primeiro.";return;}$("#setKeyMsg").textContent="Testando...";
-    try{const r=await SAMPLE("Responda só: Sistema online.");$("#setKeyMsg").textContent="Funcionando: "+r.text.slice(0,60);}catch(e){$("#setKeyMsg").textContent="Falhou: "+(e.code==="model"?"modelo não encontrado, tente gemini-2.5-flash":e.code==="rate_limited"?"limite grátis por minuto, tente já já":(e.message||e.code));}};
+  $("#setKeyTest").onclick=async()=>{const msg=$("#setKeyMsg");if(!AI.key()){msg.textContent="Cole e salve a chave primeiro.";return;}msg.textContent="Procurando o melhor modelo grátis...";
+    try{const pick=await AI.pickModel();if(pick){LSK.set("fdd2-gemini-model",pick);$("#setModel").value=pick;}}catch(e){msg.textContent="Falhou ao listar modelos: "+(e.message||e.code);return;}
+    refreshAI();msg.textContent="Testando "+AI.model()+"...";
+    try{const r=await SAMPLE("Responda só: Sistema online.");msg.textContent="Funcionando com "+AI.model()+": "+r.text.slice(0,60);}catch(e){msg.textContent="Falhou ("+AI.model()+"): "+(e.code==="rate_limited"?"limite grátis por minuto, tente já já":(e.message||e.code));}};
   $("#setVoice").onchange=e=>LSK.set("fdd2-voice-engine",e.target.value);
   $("#setVoiceDl").onclick=async()=>{const m=$("#setVoiceMsg");m.textContent="Baixando a voz...";try{await Voice.download(p=>m.textContent="Baixando a voz: "+p+"%");m.textContent="Voz neural pronta e salva no aparelho.";LSK.set("fdd2-voice-engine","neural");$("#setVoice").value="neural";}catch(e){m.textContent="Não consegui baixar agora. A voz do iPhone continua funcionando.";}};
   $("#setVoiceTest").onclick=()=>{Voice.unlock();Voice.say("Bom dia, Vitor. Sistema online. Sua quest de hoje está pronta.",true);};
   $("#setVoiceOn").onclick=()=>{const on=!Voice.enabled();LSK.set("fdd-voice",on);voice=on;voicePref=on;$("#setVoiceOn").setAttribute("aria-pressed",String(on));};
   $("#copyTopic").onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(NTFY_TOPIC).then(()=>pop("Sistema","Tópico copiado")).catch(()=>{});};
-  $("#testNtfy").onclick=async()=>{try{await fetch("https://ntfy.sh/"+NTFY_TOPIC,{method:"POST",body:"Teste do Sistema: notificações funcionando.",headers:{"Title":"Físico dos Deuses","Click":location.href.split("#")[0]}});pop("Sistema","Notificação enviada");}catch(e){pop("Sistema","Não consegui enviar.");}};
+  $("#testNtfy").onclick=async()=>{try{await fetch("https://ntfy.sh/"+NTFY_TOPIC+"?title="+encodeURIComponent("Físico dos Deuses")+"&click="+encodeURIComponent(location.href.split("#")[0])+"&tags=crossed_swords",{method:"POST",body:"Teste do Sistema: notificações funcionando."});pop("Sistema","Notificação enviada");}catch(e){pop("Sistema","Não consegui enviar.");}};
   $("#setTokBtn").onclick=async()=>{const v=$("#setTok").value.trim();if(!v)return;LSK.set("fdd2-gh-token",v);$("#setTok").value="";await Sync.run();EXTRA.perfil();};
   const off=$("#setTokOff");if(off)off.onclick=()=>{LSK.set("fdd2-gh-token","");LSK.set("fdd2-gist-id","");setSync("salvo no aparelho");EXTRA.perfil();};
   const sn=$("#syncNow");if(sn)sn.onclick=()=>Sync.run();

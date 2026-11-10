@@ -31,8 +31,9 @@ elif noite:
 else:
     chefe = " Hoje é dia de CHEFÃO." if n % 30 == 0 else ""
     titulo, msg = "Bom dia, Vitor", f"Dia {n} de 180: {quest}.{chefe} Abra o app e faça o check-in."
-req = urllib.request.Request("https://ntfy.sh/" + os.environ["NTFY_TOPIC"], data=msg.encode("utf-8"), method="POST",
-                             headers={"Title": "=?UTF-8?B?" + __import__("base64").b64encode(titulo.encode()).decode() + "?=",
-                                      "Click": os.environ["APP_URL"], "Tags": "crossed_swords"})
+import urllib.parse
+qs = urllib.parse.urlencode({"title": titulo, "click": os.environ["APP_URL"], "tags": "crossed_swords"})
+req = urllib.request.Request("https://ntfy.sh/" + os.environ["NTFY_TOPIC"] + "?" + qs, data=msg.encode("utf-8"), method="POST",
+                             headers={"Content-Type": "text/plain; charset=utf-8"})
 urllib.request.urlopen(req, timeout=20)
 print("enviado:", titulo, "|", msg)

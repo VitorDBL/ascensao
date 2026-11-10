@@ -179,6 +179,12 @@ const Sync={timer:null,busy:false,
 const AI={key(){return LSK.get("fdd2-gemini-key")||"";},model(){return LSK.get("fdd2-gemini-model")||"gemini-flash-latest";},
   toSchema(s){if(!s||typeof s!=="object")return s;const o={};for(const[k,v]of Object.entries(s)){if(k==="type")o.type=String(v).toUpperCase();else if(k==="properties"){o.properties={};for(const[pk,pv]of Object.entries(v))o.properties[pk]=this.toSchema(pv);}else if(k==="items")o.items=this.toSchema(v);else if(["description","enum","required"].includes(k))o[k]=v;}return o;},
   async b64(blob){const buf=new Uint8Array(await blob.arrayBuffer());let s="";for(let i=0;i<buf.length;i+=0x8000)s+=String.fromCharCode.apply(null,buf.subarray(i,i+0x8000));return btoa(s);},
+  async pickModel(){const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200",{headers:{"x-goog-api-key":this.key()}});
+    if(!r.ok){let m="";try{m=(await r.json()).error.message;}catch(e){}throw{code:"key",message:m||("HTTP "+r.status)};}
+    const j=await r.json();const ok=(j.models||[]).filter(m=>(m.supportedGenerationMethods||[]).includes("generateContent")).map(m=>m.name.replace(/^models\//,""))
+      .filter(n=>/flash/.test(n)&&!/image|tts|live|audio|embed|thinking-exp|preview-\d{2}-\d{2}$/.test(n));
+    const score=n=>{const v=parseFloat((n.match(/gemini-(\d+(\.\d+)?)/)||[])[1]||0);return v*10+(/latest/.test(n)?3:0)-(/lite/.test(n)?4:0)-(/preview|exp/.test(n)?2:0);};
+    ok.sort((a,b)=>score(b)-score(a));return ok[0]||null;},
   async call(body,signal){const url="https://generativelanguage.googleapis.com/v1beta/models/"+encodeURIComponent(this.model())+":generateContent";
     const r=await fetch(url,{method:"POST",signal,headers:{"Content-Type":"application/json","x-goog-api-key":this.key()},body:JSON.stringify(body)});
     if(!r.ok){let msg="";try{msg=(await r.json()).error.message;}catch(e){}const code=r.status===429?"rate_limited":r.status===400&&/API key/i.test(msg)?"not_granted":r.status===403?"not_granted":r.status===404?"model":"upstream_error";throw{code,message:msg||("HTTP "+r.status)};}
