@@ -1,5 +1,5 @@
-const CACHE="fdd-v3";
-const SHELL=["./","index.html","app.js?v=3","voice.js?v=3","extra.js?v=3","manifest.webmanifest","icons/icon-192.png","icons/apple-touch-icon.png"];
+const CACHE="fdd-v4";
+const SHELL=["./","index.html","app.js?v=4","voice.js?v=4","extra.js?v=4","manifest.webmanifest","icons/icon-192.png","icons/apple-touch-icon.png"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()));});
 self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
 self.addEventListener("fetch",e=>{const u=new URL(e.request.url);if(e.request.method!=="GET")return;

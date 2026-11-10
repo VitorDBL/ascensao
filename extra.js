@@ -224,8 +224,13 @@ EXTRA.perfil=()=>{
     refreshAI();msg.textContent="Testando "+AI.model()+"...";
     try{const r=await SAMPLE("Responda só: Sistema online.");msg.textContent="Funcionando com "+AI.model()+": "+r.text.slice(0,60);}catch(e){msg.textContent="Falhou ("+AI.model()+"): "+(e.code==="rate_limited"?"limite grátis por minuto, tente já já":(e.message||e.code));}};
   $("#setVoice").onchange=e=>LSK.set("fdd2-voice-engine",e.target.value);
-  $("#setVoiceDl").onclick=async()=>{const m=$("#setVoiceMsg");m.textContent="Baixando a voz...";try{await Voice.download(p=>m.textContent="Baixando a voz: "+p+"%");m.textContent="Voz neural pronta e salva no aparelho.";LSK.set("fdd2-voice-engine","neural");$("#setVoice").value="neural";}catch(e){m.textContent="Não consegui baixar agora. A voz do iPhone continua funcionando.";}};
-  $("#setVoiceTest").onclick=()=>{Voice.unlock();Voice.say("Bom dia, Vitor. Sistema online. Sua quest de hoje está pronta.",true);};
+  $("#setVoiceDl").onclick=async()=>{Voice.unlock();const m=$("#setVoiceMsg");m.textContent="Baixando a voz...";try{await Voice.download(p=>m.textContent="Baixando a voz: "+p+"%");m.textContent="Voz neural pronta e salva no aparelho.";LSK.set("fdd2-voice-engine","neural");$("#setVoice").value="neural";}catch(e){m.textContent="Não consegui baixar a voz neural: "+(e&&e.message||e)+". Use a voz do iPhone por enquanto.";}};
+  $("#setVoiceTest").onclick=async()=>{Voice.unlock();const m=$("#setVoiceMsg");Voice.lastErr="";
+    const eng=Voice.engine();const ready=eng==="neural"?await Voice.neuralReady():false;
+    m.textContent=eng==="neural"?(ready?"Gerando a voz neural (a primeira vez demora alguns segundos)...":"A voz neural ainda não está baixada neste aparelho. Tocando a voz do iPhone."):"Tocando a voz do iPhone.";
+    const t0=Date.now();await Voice.say("Bom dia, Vitor. Sistema online. Sua quest de hoje está pronta.",true);
+    if(Voice.lastErr)m.textContent="A voz neural falhou neste aparelho ("+Voice.lastErr.slice(0,80)+"). Troque o motor para Voz do iPhone.";
+    else if(eng==="neural"&&ready)m.textContent="Voz neural ok ("+Math.round((Date.now()-t0)/1000)+" s). Se não ouviu nada, confira se o iPhone está no silencioso e o volume.";};
   $("#setVoiceOn").onclick=()=>{const on=!Voice.enabled();LSK.set("fdd-voice",on);voice=on;voicePref=on;$("#setVoiceOn").setAttribute("aria-pressed",String(on));};
   $("#copyTopic").onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(NTFY_TOPIC).then(()=>pop("Sistema","Tópico copiado")).catch(()=>{});};
   $("#testNtfy").onclick=async()=>{try{await fetch("https://ntfy.sh/"+NTFY_TOPIC+"?title="+encodeURIComponent("Físico dos Deuses")+"&click="+encodeURIComponent(location.href.split("#")[0])+"&tags=crossed_swords",{method:"POST",body:"Teste do Sistema: notificações funcionando."});pop("Sistema","Notificação enviada");}catch(e){pop("Sistema","Não consegui enviar.");}};
