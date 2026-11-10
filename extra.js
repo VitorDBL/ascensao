@@ -42,7 +42,7 @@ function recommendations(){const r=[];const t=todayISO(),d=diaryOf(t),ms=mealsOn
   const ag=lastNDates(5).map(x=>+diaryOf(x).agua||0).filter(x=>x>0);if(ag.length>=3&&avg(ag)<1600)r.push(["Mais água","Média de "+fmt(avg(ag)/1000,1)+" L. Deixe uma garrafa na mesa do trabalho.","Dados: água dos últimos 5 dias"]);
   const v=weekVolume();Object.keys(VOLT).forEach(g=>{if(workouts().length>=3&&v[g]<VOLT[g][0]*.6)r.push(["Mais séries de "+g,v[g]+" séries nos últimos 7 dias, alvo "+VOLT[g].join(" a ")+".","Dados: treinos registrados"]);});
   const anx=meals().filter(m=>(new Date()-parseISO(m.d))/864e5<=7&&(m.fome==="ansiedade"||m.fome==="tedio"));if(anx.length>=3){const nt=anx.filter(m=>(m.at||"12")>="19").length;r.push(["Plano para a fome emocional",anx.length+" refeições por ansiedade ou tédio na semana"+(nt>=2?", a maioria à noite":"")+". Tenha um lanche proteico pronto e uma alternativa (banho, caminhada curta, ligar para alguém).","Dados: motivo das refeições"]);}
-  if(!checkins().some(c=>(new Date()-parseISO(c.d))/864e5<=14))r.push(["Fazer um check-in de medidas","Sem peso ou cintura nos últimos 14 dias.","Dados: medidas"]);
+  if(!checkins().some(c=>(new Date()-parseISO(c.d))/864e5<=14))r.push(["Pesar de manhã","Sem peso registrado nos últimos 14 dias.","Dados: peso"]);
   if(!r.length)r.push(["Manter o plano","Nada fora da curva com os dados atuais. Continue registrando para análises melhores.","Dados: todos os registros"]);return r;}
 
 // ---------- cartão de status ----------
@@ -94,7 +94,7 @@ EXTRA.sistema=()=>{
   const e=$("#espChk");if(e)e.onchange=()=>{patchDay(n,doc=>{doc.esp=e.checked;});if(e.checked)pop("Missão especial","+100 XP","gold");};
 };
 EXTRA.corpo=()=>{
-  once("layerBar",`<div id="layerBar" class="seg"><span class="eyebrow" style="align-self:center">Camadas</span><button class="btn sm" data-ly="pontos" aria-pressed="true">Pontos</button><button class="btn sm" data-ly="gordura" aria-pressed="false">Gordura estimada</button><button class="btn sm" data-ly="medidas" aria-pressed="false">Medidas</button></div><div id="tlBar" class="seg"></div><p class="note" id="layerNote">Pontos e gordura são estimativa visual pelas fotos. Medidas são o que você registrou. O modelo 3D é ilustrativo.</p>`,"#v-corpo .grid2 .card.sys","beforeend");
+  once("layerBar",`<div id="layerBar" class="seg"><span class="eyebrow" style="align-self:center">Camadas</span><button class="btn sm" data-ly="pontos" aria-pressed="true">Pontos</button><button class="btn sm" data-ly="gordura" aria-pressed="false">Gordura estimada</button></div><div id="tlBar" class="seg"></div><p class="note" id="layerNote">Pontos e gordura são estimativa visual pelas fotos. O modelo 3D é ilustrativo.</p>`,"#v-corpo .grid2 .card.sys","beforeend");
   $$("[data-ly]").forEach(b=>b.onclick=()=>{b.setAttribute("aria-pressed",String(b.getAttribute("aria-pressed")!=="true"));drawHolo();});
   const marks=[1,30,60,90,120,150,180];
   $("#tlBar").innerHTML=`<span class="eyebrow" style="align-self:center">Linha do tempo</span>`+marks.map(m=>{const key=m===1?"atual":"d"+m;const has=!!S.modelos[key];return `<button class="btn sm" data-tl="${key}" ${has?"":"disabled"} aria-pressed="${(HOLO.src||"atual")===key}">Dia ${m}</button>`;}).join("");
@@ -116,7 +116,7 @@ const _renderReg=renderReg;
 renderReg=function(){_renderReg();const map={peito:["peito"],ombros:["ombro"],bracos:["braco"],abdsup:["core"],abdinf:["core"],flancos:["core"],dorsais:["costas"],pernas:["perna"]};const gs=map[regSel];if(!gs)return;
   const since=isoD(new Date(Date.now()-30*864e5));let sets=0,ses=new Set(),lastD=null;
   workouts().filter(w=>w.d>=since).forEach(w=>(w.p&&w.p.exercicios||[]).forEach(e=>{const nm=normEx(e.nome);const g=Object.keys(GROUPS).find(g=>GROUPS[g].some(k=>nm.includes(k)));if(gs.includes(g)){sets+=(+e.series||1);ses.add(w.d);if(!lastD||w.d>lastD)lastD=w.d;}}));
-  const mk={peito:"peito",abdinf:"waist",abdsup:"waist",flancos:"waist",bracos:"braco",pernas:"coxa"}[regSel];const cs=checkins().filter(c=>mk&&c[mk]);
+  const mk=null;const cs=checkins().filter(c=>mk&&c[mk]);
   const rc=recoveryState().rec[gs[0]];
   $("#regPanel").insertAdjacentHTML("beforeend",`<div><div class="sub">Treino desta região · 30 dias</div><div class="kv"><div><small>Sessões</small><b class="mono">${ses.size}</b></div><div><small>Séries</small><b class="mono">${sets}</b></div><div><small>Última vez</small><b class="mono">${lastD?brS(parseISO(lastD)):"·"}</b></div><div><small>Recuperação</small><b class="mono">${rc==null?"·":rc+"%"}</b></div></div>
    ${mk?`<p class="note" style="margin-top:8px">Medida: ${cs.length?fmt(cs[cs.length-1][mk],1).replace(",0","")+" cm em "+brS(parseISO(cs[cs.length-1].d))+(cs.length>1?" (início "+fmt(cs[0][mk],1).replace(",0","")+" cm)":""):"ainda não registrada"}</p>`:""}</div>`);};

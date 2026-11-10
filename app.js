@@ -103,7 +103,7 @@ function missionFor(n){
   else if(PLAN[wd]){const P=PLAN[wd];m={tipo:"academia",titulo:P.t,tasks:P.ex.map(e=>e.n+" "+e.s+"x"+e.lo+"-"+e.hi+(e.tempo?"s":"")).concat(["Registrar as cargas na aba Treino"]),ex:P.ex.concat([null]),nota:"Termine cada série sentindo que aguentaria mais 1 ou 2."};}
   else if(wd===6){const s=adaptSat(n,SAT[L]);m={tipo:"casa",titulo:"Desafio em casa",tasks:["Flexões "+s[0]+"x"+s[1]+(L===0?" (joelho apoiado vale)":""),"Abdominal "+s[2]+"x"+s[3],"Prancha 3x"+s[4]+"s","Agachamento livre 3x"+Math.round(s[5]/3)],ex:[null,null,null,null],nota:"Nível "+(L+1)+" de 6. As metas sobem a cada fase."};}
   else {m={tipo:"casa",titulo:"Domingo em casa",tasks:["Mobilidade 10 minutos","Shadow boxing "+(3+Math.floor(L/2))+" rounds de 2 min","Abdominal bicicleta 3x"+(20+L*4),"Prancha lateral 2x"+(20+L*8)+"s de cada lado"],ex:[null,null,null,null],nota:"Sem sair de casa. Use o cronômetro da aba Treino."};
-    if(n%14===0){m.tasks.push("Check-in: peso e cintura de manhã");m.ex.push(null);}}
+    if(n%14===0){m.tasks.push("Check-in: peso de manhã");m.ex.push(null);}}
   if(n===1){m={tipo:"luta",titulo:"Aula experimental: kickboxing",tasks:["Ir na aula experimental de kickboxing","Fotos de base tiradas","Contar ao Coach como foi"],ex:[null,null,null],nota:"Primeiro dia da campanha. Só aparecer já vale."};}
   const gym=(w,nota)=>{const P=PLAN[w];return{tipo:"academia",titulo:P.t,tasks:P.ex.map(e=>e.n+" "+e.s+"x"+e.lo+"-"+e.hi+(e.tempo?"s":"")).concat(["Registrar as cargas na aba Treino"]),ex:P.ex.concat([null]),nota};};
   if(n===2)m=gym(2,"Semana 1: hoje academia, amanhã a aula experimental de jiu-jitsu.");
@@ -111,7 +111,7 @@ function missionFor(n){
   if(n===4)m=gym(5,"Semana 1: quinta superior, sexta inferior + core.");
   if(n===5)m=gym(4,"Semana 1: sexta fecha com inferior + core.");
   if(returning(n)&&m.tipo==="academia")m.nota="Retomada depois da recuperação: faça 1 série a menos em cada exercício. "+m.nota;
-  if(isMBoss(n)){m.boss=true;m.titulo="Chefão da fase "+(L+1)+": "+m.titulo;["Teste: máximo de flexões seguidas","Teste: prancha máxima","Peso e todas as medidas","Fotos frente, perfil e costas para o novo scan"].forEach(t=>{m.tasks.push(t);m.ex.push(null);});}
+  if(isMBoss(n)){m.boss=true;m.titulo="Chefão da fase "+(L+1)+": "+m.titulo;["Teste: máximo de flexões seguidas","Teste: prancha máxima","Pesar de manhã","Fotos frente, perfil e costas para o novo scan"].forEach(t=>{m.tasks.push(t);m.ex.push(null);});}
   m.livre=wd===6;
   return m;
 }
@@ -133,6 +133,12 @@ function del(c,id,opt){
   const prev=S[c][id];if(!(opt&&opt.noUndo))UNDO.push({c,id,prev});
   const m={...S[c]};delete m[id];S[c]=m;TOMB[c+"/"+id]=Date.now();persist(c);LSK.set("fdd2-tomb",TOMB);renderAll();Sync.schedule();
 }
+function askDel(c,id){if(!id||!S[c]||!S[c][id]){pop("Sistema","Não achei esse registro. Feche e abra o app.");return;}
+  $$(".delbar").forEach(x=>x.remove());const bar=document.createElement("div");bar.className="delbar";
+  bar.style.cssText="position:fixed;left:0;right:0;bottom:0;z-index:999;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;padding:14px max(16px,env(safe-area-inset-left,0px)) calc(14px + env(safe-area-inset-bottom,0px));background:#0b1220;border-top:1px solid #3b82f6;color:#e6eefc;font-size:15px";
+  bar.innerHTML='<span>Apagar este registro?</span><button class="btn pri" data-y>Apagar</button><button class="btn" data-n>Cancelar</button>';
+  bar.querySelector("[data-y]").onclick=()=>{bar.remove();del(c,id);pop("Sistema","Apagado. Dá para desfazer em Perfil.");};
+  bar.querySelector("[data-n]").onclick=()=>bar.remove();document.body.appendChild(bar);}
 function undo(){const u=UNDO.pop();if(!u){pop("Sistema","Nada para desfazer.");return;}
   if(u.prev)put(u.c,u.id,u.prev,{noUndo:true});else del(u.c,u.id,{noUndo:true});pop("Sistema","Última ação desfeita.");}
 const setSync=t=>{const el=$("#sync");if(el)el.textContent=t;};
@@ -395,7 +401,7 @@ const REG=[
  {id:"peito",nome:"Peito",p:[-55,70,295],fat:75,tag:"Foco",visto:"Acúmulo de gordura na região, visível de frente e de lado. Tem músculo por baixo.",plano:["Supino inclinado com halter","Crucifixo inclinado","Peito de cima dá formato quando a gordura sai"],quando:"Afina bem até o 4º mês. Se depois, já magro, sobrar volume firme sob o mamilo, mostre a um médico.",meta:"Peitoral firme, com a linha de baixo marcada."},
  {id:"bracos",nome:"Braços",p:[-134,0,330],fat:45,tag:"Atenção",visto:"O pico de bíceps aparece no flexionado. O músculo existe, a gordura esconde a separação.",plano:["Rosca direta e tríceps na polia","Puxadas e remadas também trabalham bíceps"],quando:"Separação começa a aparecer perto do 3º ou 4º mês.",meta:"Separação entre bíceps, tríceps e ombro."},
  {id:"abdsup",nome:"Abdômen superior",p:[0,80,352],fat:70,tag:"Foco",visto:"Coberto, mas com menos gordura que a parte de baixo. É onde os primeiros gomos aparecem.",plano:["Elevação de pernas e prancha","Quem revela é a perda de gordura"],quando:"Começa a marcar com boa luz por volta do 4º mês.",meta:"Os quatro gomos de cima visíveis."},
- {id:"abdinf",nome:"Abdômen inferior",p:[0,90,425],fat:92,tag:"Maior depósito",visto:"O maior depósito do seu corpo, com a dobra sobre o elástico da cueca. Padrão comum em homem.",plano:["Sem atalho local: treino + comida + constância","Medir a cintura no umbigo a cada 2 semanas"],quando:"O último a sair. Vai parecer travado no meio da campanha e sai de verdade no fim.",meta:"Sem dobra, com a linha do abdômen chegando no elástico."},
+ {id:"abdinf",nome:"Abdômen inferior",p:[0,90,425],fat:92,tag:"Maior depósito",visto:"O maior depósito do seu corpo, com a dobra sobre o elástico da cueca. Padrão comum em homem.",plano:["Sem atalho local: treino + comida + constância","Pesar a cada 2 semanas e comparar as fotos"],quando:"O último a sair. Vai parecer travado no meio da campanha e sai de verdade no fim.",meta:"Sem dobra, com a linha do abdômen chegando no elástico."},
  {id:"flancos",nome:"Flancos",p:[102,8,408],fat:85,tag:"Foco",visto:"Bem visíveis no perfil, é o que alarga a cintura de frente.",plano:["Prancha lateral","Pallof press 3x12 cada lado"],quando:"Saem junto com o abdômen inferior, no fim da campanha.",meta:"Cintura reta de frente, linha de oblíquo aparecendo."},
  {id:"dorsais",nome:"Dorsais",p:[60,-72,300],fat:50,tag:"Construir",visto:"Pouco desenvolvidas em relação ao ombro. São elas que abrem o V.",plano:["Puxada frontal","Barra fixa, assistida se precisar","Remadas"],quando:"Diferença visível nas fotos de costas em 3 a 5 meses.",meta:"Costas largas em cima, cintura fina embaixo."},
  {id:"pernas",nome:"Pernas",p:[-56,30,660],fat:45,tag:"Manter",visto:"Proporcionais ao corpo. A luta vai trabalhar bastante, por isso um dia de perna.",plano:["Agachamento ou leg press","Stiff e búlgaro"],quando:"Definição de coxa aparece junto com o abdômen.",meta:"Coxa com a divisão do quadríceps aparecendo."}
@@ -451,8 +457,8 @@ const photos=()=>Object.entries(S.fotos).map(([id,p])=>({...p,_id:id})).filter(p
 function renderCorpo(){
   buildHolo();renderReg();
   const cs=checkins().slice().reverse(),f=v=>v?fmt(v,1).replace(",0",""):"·";
-  $("#cBody").innerHTML=cs.map(k=>`<tr><td>${brD(parseISO(k.d))}</td><td>${f(k.w)}</td><td>${f(k.waist)}</td><td>${f(k.peito)}</td><td>${f(k.braco)}</td><td>${f(k.coxa)}</td><td>${f(k.quadril)}</td><td><button class="linkbtn" data-del="${esc(k.d)}">apagar</button></td></tr>`).join("");
-  $$("#cBody [data-del]").forEach(b=>b.onclick=()=>{if(b.dataset.c)del("checkins",b.dataset.del);else{b.dataset.c=1;b.textContent="confirmar?";}});
+  $("#cBody").innerHTML=cs.map(k=>`<tr><td>${brD(parseISO(k.d))}</td><td>${f(k.w)}</td><td><button class="linkbtn" data-del="${esc(k.d)}">apagar</button></td></tr>`).join("");
+  $$("#cBody [data-del]").forEach(b=>b.onclick=()=>askDel("checkins",b.dataset.del));
   drawW();
   const ang=$("#cmpAngle").value,ps=photos().filter(p=>p.angle===ang),box=$("#cmpBox");
   if(ps.length<2){box.innerHTML=ps.length?`<div class="photo"><img src="${blob(ps[0].asset)}" alt="Foto ${esc(ang)}"><div class="ro">DIA ${nOf(parseISO(ps[0].d))} · ${fmt(weightOn(ps[0].d))} KG</div></div><p class="note">Quando tiver a próxima foto deste ângulo, aparece um divisor para comparar.</p>`:`<div class="empty">Nenhuma foto deste ângulo ainda.</div>`;box.dataset.k="";}
@@ -462,15 +468,15 @@ function renderCorpo(){
   $("#thumbs").innerHTML=photos().slice().reverse().filter(p=>p.angle!=="360").map(x=>`<a class="thumb" href="${blob(x.asset)}" target="_blank" rel="noopener" style="background-image:url('${blob(x.asset)}')" aria-label="Foto ${esc(x.angle)} ${brD(parseISO(x.d))}"></a>`).join("");
   const hs=Object.entries(S.saude).map(([id,h])=>({...h,_id:id})).sort((a,b)=>a.d<b.d?1:-1);
   $("#hList").innerHTML=hs.length?hs.map(h=>`<div class="item"><div><div class="meta">${brD(parseISO(h.d))} · ${esc({consulta:"Consulta",exame:"Exame",bioimpedancia:"Bioimpedância / DEXA"}[h.tipo]||h.tipo)}</div><div class="ttl">${esc(h.txt)}</div></div><div class="act"><button class="linkbtn" data-hd="${h._id}">apagar</button></div></div>`).join(""):`<div class="empty">Registre consultas, exames e bioimpedâncias para ter tudo num lugar só.</div>`;
-  $$("#hList [data-hd]").forEach(b=>b.onclick=()=>{if(b.dataset.c)del("saude",b.dataset.hd);else{b.dataset.c=1;b.textContent="confirmar?";}});
+  $$("#hList [data-hd]").forEach(b=>b.onclick=()=>askDel("saude",b.dataset.hd));
 }
 const weightOn=ds=>{const c=checkins().filter(x=>x.d<=ds);return c.length?+c[c.length-1].w:W0;};
 $("#cmpAngle").onchange=()=>{$("#cmpBox").dataset.k="";renderCorpo();};
 $("#cBtn").onclick=()=>{const d=$("#cDate").value,w=parseFloat($("#cW").value);$("#cErr").textContent="";
   if(!d){$("#cErr").textContent="Escolha a data.";return;}if(!(w>=40&&w<=200)){$("#cErr").textContent="Digite o peso em kg, entre 40 e 200.";return;}
   const num=id=>{const v=parseFloat($(id).value);return v>0?v:null;};
-  put("checkins",d,{d,w,waist:num("#cWaist"),peito:num("#cPeito"),braco:num("#cBraco"),coxa:num("#cCoxa"),quadril:num("#cQuad")});
-  ["#cW","#cWaist","#cPeito","#cBraco","#cCoxa","#cQuad"].forEach(s=>$(s).value="");pop("Check-in registrado","+"+XP.checkin+" XP");};
+  put("checkins",d,{...(S.checkins[d]||{}),d,w});
+  ["#cW"].forEach(s=>$(s).value="");pop("Check-in registrado","+"+XP.checkin+" XP");};
 $("#hBtn").onclick=()=>{const t=$("#hTxt").value.trim();$("#hErr").textContent="";if(!t){$("#hErr").textContent="Descreva a consulta ou o exame.";return;}
   put("saude",newId(),{d:$("#hDate").value||todayISO(),tipo:$("#hType").value,txt:t.slice(0,160)});$("#hTxt").value="";};
 $("#upBtn").onclick=async()=>{const f=$("#upFile").files[0],ang=$("#upAngle").value,d=$("#upDate").value||todayISO();$("#upErr").textContent="";
@@ -510,7 +516,7 @@ function renderTreino(){
   $("#tList").innerHTML=ws.length?ws.slice(0,30).map(w=>`<div class="item"><div><div class="meta">${brD(parseISO(w.d))} · ${esc(w.p?(w.p.modalidade||w.p.tipo):"treino")}${w.p&&w.p.minutos?" · "+w.p.minutos+" min":""}${w.p&&w.p.intensidade?" · intensidade "+w.p.intensidade+"/5":""}</div>
     <div class="ttl">${esc(w.p&&w.p.resumo||w.texto)}</div>${w.p&&w.p.exercicios&&w.p.exercicios.length?`<div class="note">${w.p.exercicios.map(e=>esc(e.nome)+(e.series?" "+e.series+"x"+(e.reps||"?"):"")+(e.carga_kg?" · "+fmt(e.carga_kg,1).replace(",0","")+" kg":"")).join(" | ")}</div>`:""}</div>
     <div class="act"><button class="linkbtn" data-del="${w._id}">apagar</button></div></div>`).join(""):`<div class="empty">Nenhum treino registrado ainda.</div>`;
-  $$("#tList [data-del]").forEach(b=>b.onclick=()=>{if(b.dataset.c)del("treinos",b.dataset.del);else{b.dataset.c=1;b.textContent="confirmar?";}});
+  $$("#tList [data-del]").forEach(b=>b.onclick=()=>askDel("treinos",b.dataset.del));
 }
 $("#exSel").onchange=renderTreino;
 $("#gradBtn").onclick=()=>{put("perfil","luta",{...(S.perfil.luta||{}),graduacao:$("#gradIn").value.trim().slice(0,40)});pop("Sistema","Graduação salva");};
@@ -553,7 +559,7 @@ function renderNutricao(){
   $("#mList").innerHTML=all.length?all.slice(0,50).map(m=>`<div class="item"><div><div class="meta">${brD(parseISO(m.d))} ${esc(m.at||"")} · ${esc(m.tipo||"")} · ${esc(HUNGER[m.fome]||"")}${m.livre?" · LIVRE":""}</div><div class="ttl">${esc(m.a&&m.a.prato||m.texto)}</div>
     ${m.a&&m.a.total?`<div class="note mono">P ${Math.round(m.a.total.proteina||0)} · C ${Math.round(m.a.total.carbo||0)} · G ${Math.round(m.a.total.gordura||0)} · ≈${Math.round(m.a.total.kcal||0)} kcal${m.a.qualidade?` · <span class="stars">${"★".repeat(m.a.qualidade)}${"☆".repeat(5-m.a.qualidade)}</span>`:""}</div>`:`<div class="note">${esc(m.texto)}</div>`}
     ${m.foto?`<img src="${blob(m.foto)}" alt="Foto da refeição">`:""}</div><div class="act"><button class="linkbtn" data-fav="${m._id}" aria-label="Favoritar">☆ favorito</button><button class="linkbtn" data-del="${m._id}">apagar</button></div></div>`).join(""):`<div class="empty">Nenhuma refeição registrada. Fotografe o próximo prato.</div>`;
-  $$("#mList [data-del]").forEach(b=>b.onclick=()=>{if(b.dataset.c)del("refeicoes",b.dataset.del);else{b.dataset.c=1;b.textContent="confirmar?";}});
+  $$("#mList [data-del]").forEach(b=>b.onclick=()=>askDel("refeicoes",b.dataset.del));
   $$("#mList [data-fav]").forEach(b=>b.onclick=()=>{const m=S.refeicoes[b.dataset.fav];put("favoritos",newId(),{nome:(m.a&&m.a.prato||m.texto||"Refeição").slice(0,60),texto:m.texto,tipo:m.tipo,a:m.a||null});pop("Sistema","Adicionado aos favoritos");});
 }
 $("#mView").onchange=renderNutricao;
@@ -586,7 +592,7 @@ function dataSummary(days){
   lines.push(`SEMANA 1: seg 09/11 aula experimental de kickboxing (ele gostou), ter 10/11 Superior A, qua 11/11 aula experimental de jiu-jitsu, qui 12/11 Superior B, sex 13/11 Inferior + core. Depois segue a rotina: seg e qua luta, ter/qui/sex academia, fim de semana em casa. Alguns sábados têm boss surpresa de aula de kickboxing das 10h30 às 12h.`);
   lines.push(`PERFIL: Vitor, 21 anos, 1,76 m. Começou em 09/11/2026 com 90 kg (tinha 110 no início do ano, chegou a 86, ficou 2 meses parado após cirurgia de fimose). Meta: 75 kg até 07/05/2027 (180 dias). Usa Mounjaro com acompanhamento médico e relata comer por ansiedade. Rotina: seg e qua luta, ter/qui/sex academia, fim de semana treinos em casa. Trabalha 9h-16h e faz faculdade.`);
   lines.push(`HOJE: dia ${t} de 180 (${brD(new Date())}). Peso atual registrado ${fmt(curW())} kg. Rota planejada hoje ${fmt(plannedW(t))} kg. Sequência ${streak()} dias. Bosses vencidos ${bossesBeaten().t}.`);
-  lines.push("CHECK-INS: "+(checkins().map(c=>`${brS(parseISO(c.d))} ${fmt(c.w)}kg${c.waist?" cintura "+c.waist:""}`).join("; ")||"nenhum"));
+  lines.push("O Vitor não gosta de se medir com fita: acompanhe só peso, fotos e treino, e nunca peça medidas.");lines.push("CHECK-INS: "+(checkins().map(c=>`${brS(parseISO(c.d))} ${fmt(c.w)}kg${c.waist?" cintura "+c.waist:""}`).join("; ")||"nenhum"));
   lines.push("DIAS (missão feita/total, água L, sono h, humor/disposição/motivação/fadiga 1-5, refeições, P g, ansiedade):");
   for(let n=Math.max(1,t-days+1);n<=t;n++){const date=isoD(dateOf(n)),m=missionFor(n),d=dayDoc(n),di=diaryOf(date),tot=dayTotals(date),ms=mealsOn(date);
     lines.push(`${brS(dateOf(n))} ${DOW[dateOf(n).getDay()].slice(0,3)}: ${d.rest?"descanso":(m.tasks.filter((_,i)=>d.t&&d.t[i]).length+"/"+m.tasks.length+" "+m.titulo)}${isSBoss(n)?(d.b?" boss surpresa vencido":" boss surpresa não feito"):""}, água ${di.agua?fmt(di.agua/1000,1):"?"}, sono ${di.sono??"?"}, humor ${di.humor??"?"}/${di.disposicao??"?"}/${di.motivacao??"?"}/${di.fadiga??"?"}, ref ${ms.length}, P ${Math.round(tot.p)}, ans ${ms.filter(x=>x.fome==="ansiedade"||x.fome==="tedio").length}${di.dor?", dor: "+di.dor:""}${di.nota?", check-in: "+di.nota.slice(0,100):""}${emergencyOn(n)?", MODO RECUPERAÇÃO ("+emergencyOn(n).motivo+")":""}${di.vitorias?", vitória: "+di.vitorias.slice(0,80):""}${di.dificuldades?", dificuldade: "+di.dificuldades.slice(0,80):""}`);}
@@ -648,8 +654,8 @@ const TOOLS=[
   execute:i=>{const ml=Math.max(-3000,Math.min(5000,+i.ml||0));const di=diaryOf(todayISO());const v=Math.max(0,(+di.agua||0)+ml);saveDiary({agua:v});pushAct("Água: "+fmt(v/1000,1)+" L");return "total "+v+" ml";}},
  {name:"registrar_sono",description:"Registra as horas dormidas na última noite.",inputSchema:{type:"object",properties:{horas:{type:"number"}},required:["horas"]},
   execute:i=>{const h=+i.horas;if(!(h>=0&&h<=16))throw new Error("horas inválidas");saveDiary({sono:h});pushAct("Sono: "+fmt(h,1).replace(",0","")+" h");return "ok";}},
- {name:"registrar_peso",description:"Registra peso (kg) e, se dito, cintura (cm) de hoje.",inputSchema:{type:"object",properties:{kg:{type:"number"},cintura:{type:"number"}},required:["kg"]},
-  execute:i=>{const w=+i.kg;if(!(w>=40&&w<=200))throw new Error("peso inválido");const d=todayISO();put("checkins",d,{...(S.checkins[d]||{}),d,w,waist:+i.cintura||(S.checkins[d]&&S.checkins[d].waist)||null});pushAct("Peso: "+fmt(w)+" kg");return "ok";}},
+ {name:"registrar_peso",description:"Registra o peso (kg) de hoje. O Vitor não quer registrar medidas com fita.",inputSchema:{type:"object",properties:{kg:{type:"number"}},required:["kg"]},
+  execute:i=>{const w=+i.kg;if(!(w>=40&&w<=200))throw new Error("peso inválido");const d=todayISO();put("checkins",d,{...(S.checkins[d]||{}),d,w});pushAct("Peso: "+fmt(w)+" kg");return "ok";}},
  {name:"registrar_estado",description:"Registra humor, disposição, motivação e fadiga de 1 a 5, e dor (texto) de hoje. Envie só o que ele disse.",inputSchema:{type:"object",properties:{humor:{type:"integer"},disposicao:{type:"integer"},motivacao:{type:"integer"},fadiga:{type:"integer"},dor:{type:"string"}}},
   execute:i=>{const p={};["humor","disposicao","motivacao","fadiga"].forEach(k=>{const v=Math.round(+i[k]);if(v>=1&&v<=5)p[k]=v;});if(i.dor)p.dor=String(i.dor).slice(0,120);saveDiary(p);pushAct("Estado do dia salvo");return "ok";}},
  {name:"salvar_diario",description:"Salva no diário de hoje vitórias, dificuldades e o que faria melhor.",inputSchema:{type:"object",properties:{vitorias:{type:"string"},dificuldades:{type:"string"},melhorar:{type:"string"}}},
@@ -713,7 +719,7 @@ function renderJornada(){const t=TODAY();
     return `<div class="proj"><div class="head"><b>${esc(p.nome)}</b><span class="eyebrow">${daysLeft>=0?daysLeft+" dias restantes":"prazo encerrado"}</span></div><div class="progress"><i style="width:${prog*100}%"></i></div>
       <div class="meta mono note">${p.ind==="manual"?Math.round(prog*100)+"%":fmt(cur,1).replace(",0","")+" de "+fmt(p.de,1).replace(",0","")+" → "+fmt(p.ate,1).replace(",0","")} · início ${brS(parseISO(p.inicio))} · prazo ${brD(parseISO(p.fim))}</div>
       <div class="seg">${p.ind==="manual"?`<button class="btn sm" data-pm="${p._id}">+10%</button>`:""}<button class="linkbtn" data-pd="${p._id}">apagar</button></div></div>`;}).join(""):`<div class="empty">Nenhuma jornada.</div>`;
-  $$("#pList [data-pd]").forEach(b=>b.onclick=()=>{if(b.dataset.c)del("projetos",b.dataset.pd);else{b.dataset.c=1;b.textContent="confirmar?";}});
+  $$("#pList [data-pd]").forEach(b=>b.onclick=()=>askDel("projetos",b.dataset.pd));
   $$("#pList [data-pm]").forEach(b=>b.onclick=()=>{const p=S.projetos[b.dataset.pm];put("projetos",b.dataset.pm,{...p,manual:Math.min(100,(+p.manual||0)+10)});});
 }
 function projCur(p){if(p.ind==="peso")return curW();if(p.ind==="cintura"){const c=checkins().filter(x=>x.waist);return c.length?+c[c.length-1].waist:p.de;}
@@ -853,7 +859,7 @@ function bootQuest(){const t=Math.min(TOTAL,Math.max(1,TODAY())),m=missionFor(t)
      <button class="tile" data-go="coach"><b>Falar com o Sistema</b><span>Conte o que fez, comeu ou sente</span></button>
      <button class="tile" data-go="nutricao"><b>Registrar refeição</b><span>Foto ou texto do prato</span></button>
      <button class="tile" data-go="treino"><b>Treino</b><span>Cargas e cronômetro</span></button>
-     <button class="tile" data-go="corpo"><b>Meu corpo</b><span>Scan 3D e medidas</span></button>
+     <button class="tile" data-go="corpo"><b>Meu corpo</b><span>Scan 3D e peso</span></button>
      ${veryLow&&!m.recup?`<button class="tile" data-em="Exausto, preciso descansar"><b>Modo recuperação</b><span>Pausar sem perder a sequência</span></button>`:""}
    </div>`;
   if(sb)setTimeout(()=>pop("Alerta do Sistema","Um boss surpresa apareceu","boss"),500);
