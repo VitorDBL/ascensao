@@ -1,4 +1,4 @@
-import os, datetime, urllib.request, zoneinfo
+import os, json, datetime, urllib.request, zoneinfo
 tz = zoneinfo.ZoneInfo("America/Sao_Paulo")
 agora = datetime.datetime.now(tz)
 hoje = agora.date()
@@ -48,7 +48,24 @@ def mensagem(dia, noite):
     chefe = " Hoje é dia de CHEFÃO." if n % 30 == 0 else ""
     return ("Bom dia, Vitor", f"Dia {n} de 180: {quest}.{chefe} Abra o app e faça o check-in.")
 
+def ja_agendadas():
+    try:
+        url = "https://ntfy.sh/" + os.environ["NTFY_TOPIC"] + "/json?poll=1&scheduled=1&since=all"
+        linhas = urllib.request.urlopen(url, timeout=20).read().decode("utf-8").splitlines()
+        return {(j.get("time"), j.get("message")) for j in map(json.loads, linhas) if j.get("event") == "message"}
+    except Exception as e:
+        print("não consegui ler os agendados:", e)
+        return set()
+AGENDADAS = None
+
 def enviar(titulo, msg, quando=None):
+    global AGENDADAS
+    if quando is not None:
+        if AGENDADAS is None:
+            AGENDADAS = ja_agendadas()
+        if (int(quando.timestamp()), msg) in AGENDADAS:
+            print("já estava agendado:", quando.isoformat(), "|", msg)
+            return
     params = {"title": titulo, "click": os.environ["APP_URL"], "tags": "crossed_swords"}
     if quando is not None:
         params["at"] = str(int(quando.timestamp()))
