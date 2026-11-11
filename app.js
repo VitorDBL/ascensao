@@ -85,10 +85,14 @@ const POOL={
        L=>["Mobilidade: "+(15+L*3)+" minutos","Quadril, ombros e coluna, no chão da sala."]]
 };
 const isMBoss=n=>n%30===0;
-const isKickSat=n=>n>=6&&n<=179&&!isMBoss(n)&&dateOf(n).getDay()===6&&hash(n*3+1)%3===0;
+// sábado de kickboxing: no máximo 1 por mês, nunca nas datas bloqueadas, nunca em semanas seguidas
+const KICK_EXCL=new Set(["2026-11-14","2026-11-21","2026-11-28","2026-12-05","2026-12-26","2027-01-02"]);
+const KICK_DAYS=(()=>{const byM={},out=[];for(let n=6;n<=179;n++){const d=dateOf(n);if(d.getDay()!==6||isMBoss(n)||KICK_EXCL.has(isoD(d)))continue;const k=d.getFullYear()*12+d.getMonth();(byM[k]=byM[k]||[]).push(n);}
+  Object.keys(byM).map(Number).sort((a,b)=>a-b).forEach(k=>{const c=byM[k].filter(n=>!out.length||n-out[out.length-1]>=14);if(c.length)out.push(c[hash(k*7+5)%c.length]);});return new Set(out);})();
+const isKickSat=n=>KICK_DAYS.has(n);
 const isSBoss=n=>n>=5&&n<=179&&!isMBoss(n)&&(hash(n)%8===0||isKickSat(n));
 const kickRevealed=n=>isKickSat(n)&&(n<=TODAY()||(n-1<=TODAY()&&dayDone(n-1)));
-function sboss(n){if(isKickSat(n))return{t:"Aula de kickboxing de sábado, 10h30 às 12h",d:"Sábado fora de casa: vale como o desafio do dia."};const wd=dateOf(n).getDay(),L=phaseOf(n);const p=(wd===0||wd===6)?POOL.casa:(wd===1||wd===3)?POOL.luta:POOL.gym;const[t,d]=p[hash(n*7+3)%p.length](L);return{t,d};}
+function sboss(n){if(isKickSat(n))return{t:"Aula de kickboxing de sábado, 10h30 às 12h (1h30)",d:"Sábado fora de casa: vale como o desafio do dia."};const wd=dateOf(n).getDay(),L=phaseOf(n);const p=(wd===0||wd===6)?POOL.casa:(wd===1||wd===3)?POOL.luta:POOL.gym;const[t,d]=p[hash(n*7+3)%p.length](L);return{t,d};}
 const HABITS=["Proteína em todas as refeições","Registrar 2 refeições ou mais","Beber 2 litros de água","Dormir 7 horas ou mais"];
 
 function adaptSat(n,base){let f=1;const prev=[n-7,n-14].filter(x=>x>=1&&x<n&&x<=TODAY());
@@ -99,17 +103,17 @@ function missionFor(n){
   const em=emergencyOn(n);
   if(em)return{tipo:"recup",titulo:"Modo recuperação",tasks:["Descansar de verdade, sem treino forçado","Beber 2 litros de água","Dormir 7 horas ou mais"],ex:[null,null,null],nota:"Motivo: "+em.motivo+". Penalidades e bosses suspensos. A sequência fica protegida.",recup:true,livre:false};
   let m={tipo:"",titulo:"",tasks:[],ex:[],nota:""};
-  if(wd===1||wd===3){m={tipo:"luta",titulo:"Dia de luta",tasks:["Ir na aula de luta","Registrar as técnicas na aba Treino"],ex:[null,null],nota:"Coquilha nas lutas de trocação. Hidrate antes."};}
+  if(wd===1||wd===3){m={tipo:"luta",titulo:"Kickboxing",tasks:["Ir na aula de kickboxing","Registrar as técnicas na aba Treino"],ex:[null,null],nota:"Coquilha nas lutas de trocação. Hidrate antes."};}
   else if(PLAN[wd]){const P=PLAN[wd];m={tipo:"academia",titulo:P.t,tasks:P.ex.map(e=>e.n+" "+e.s+"x"+e.lo+"-"+e.hi+(e.tempo?"s":"")).concat(["Registrar as cargas na aba Treino"]),ex:P.ex.concat([null]),nota:"Termine cada série sentindo que aguentaria mais 1 ou 2."};}
   else if(wd===6){const s=adaptSat(n,SAT[L]);m={tipo:"casa",titulo:"Desafio em casa",tasks:["Flexões "+s[0]+"x"+s[1]+(L===0?" (joelho apoiado vale)":""),"Abdominal "+s[2]+"x"+s[3],"Prancha 3x"+s[4]+"s","Agachamento livre 3x"+Math.round(s[5]/3)],ex:[null,null,null,null],nota:"Nível "+(L+1)+" de 6. As metas sobem a cada fase."};}
   else {m={tipo:"casa",titulo:"Domingo em casa",tasks:["Mobilidade 10 minutos","Shadow boxing "+(3+Math.floor(L/2))+" rounds de 2 min","Abdominal bicicleta 3x"+(20+L*4),"Prancha lateral 2x"+(20+L*8)+"s de cada lado"],ex:[null,null,null,null],nota:"Sem sair de casa. Use o cronômetro da aba Treino."};
     if(n%14===0){m.tasks.push("Check-in: peso de manhã");m.ex.push(null);}}
   if(n===1){m={tipo:"luta",titulo:"Aula experimental: kickboxing",tasks:["Ir na aula experimental de kickboxing","Fotos de base tiradas","Contar ao Coach como foi"],ex:[null,null,null],nota:"Primeiro dia da campanha. Só aparecer já vale."};}
   const gym=(w,nota)=>{const P=PLAN[w];return{tipo:"academia",titulo:P.t,tasks:P.ex.map(e=>e.n+" "+e.s+"x"+e.lo+"-"+e.hi+(e.tempo?"s":"")).concat(["Registrar as cargas na aba Treino"]),ex:P.ex.concat([null]),nota};};
-  if(n===2)m=gym(2,"Semana 1: hoje academia, amanhã a aula experimental de jiu-jitsu.");
-  if(n===3){m={tipo:"luta",titulo:"Aula experimental: jiu-jitsu",tasks:["Ir na aula experimental de jiu-jitsu","Contar ao Coach como foi a aula"],ex:[null,null],nota:"Repare no professor, no clima da turma e no horário."};}
-  if(n===4)m=gym(5,"Semana 1: quinta superior, sexta inferior + core.");
-  if(n===5)m=gym(4,"Semana 1: sexta fecha com inferior + core.");
+  if(n===2)m=gym(2,"Semana 1: Superior A.");
+  if(n===3)m=gym(4,"Semana 1: hoje inferior + core, amanhã kickboxing.");
+  if(n===4){m={tipo:"luta",titulo:"Kickboxing",tasks:["Ir na aula de kickboxing","Registrar as técnicas na aba Treino"],ex:[null,null],nota:"Semana 1: o kickboxing vem na quinta. Coquilha e hidratação."};}
+  if(n===5)m=gym(5,"Semana 1: fecha a semana com Superior B.");
   if(returning(n)&&m.tipo==="academia")m.nota="Retomada depois da recuperação: faça 1 série a menos em cada exercício. "+m.nota;
   if(isMBoss(n)){m.boss=true;m.titulo="Chefão da fase "+(L+1)+": "+m.titulo;["Teste: máximo de flexões seguidas","Teste: prancha máxima","Pesar de manhã","Fotos frente, perfil e costas para o novo scan"].forEach(t=>{m.tasks.push(t);m.ex.push(null);});}
   m.livre=wd===6;
@@ -646,7 +650,7 @@ function md(t){const lines=esc(t).split("\n");let h="",inList=false;
   if(inList)h+="</ul>";return h;}
 function dataSummary(days){
   const t=Math.min(TOTAL,TODAY()),lines=[];
-  lines.push(`SEMANA 1: seg 09/11 aula experimental de kickboxing (ele gostou), ter 10/11 Superior A, qua 11/11 aula experimental de jiu-jitsu, qui 12/11 Superior B, sex 13/11 Inferior + core. Depois segue a rotina: seg e qua luta, ter/qui/sex academia, fim de semana em casa. Alguns sábados têm boss surpresa de aula de kickboxing das 10h30 às 12h.`);
+  lines.push(`SEMANA 1: seg 09/11 aula experimental de kickboxing, ter 10/11 Superior A, qua 11/11 Inferior + core, qui 12/11 kickboxing, sex 13/11 Superior B. Ele decidiu: a luta é KICKBOXING (treina com um amigo), não vai fazer jiu-jitsu. Rotina fixa: seg e qua kickboxing, ter Superior A, qui Inferior + core, sex Superior B, fim de semana em casa. Cerca de 1 sábado por mês tem boss surpresa: aula de kickboxing das 10h30 às 12h, revelado só quando ele conclui a quest de sexta; nunca revele antes.`);
   lines.push(`PERFIL: Vitor, 21 anos, 1,76 m. Começou em 09/11/2026 com 90 kg (tinha 110 no início do ano, chegou a 86, ficou 2 meses parado após cirurgia de fimose). Meta: 75 kg até 07/05/2027 (180 dias). Usa Mounjaro com acompanhamento médico e relata comer por ansiedade. Rotina: seg e qua luta, ter/qui/sex academia, fim de semana treinos em casa. Trabalha 9h-16h e faz faculdade.`);
   lines.push(`HOJE: dia ${t} de 180 (${brD(new Date())}). Peso atual registrado ${fmt(curW())} kg. Rota planejada hoje ${fmt(plannedW(t))} kg. Sequência ${streak()} dias. Bosses vencidos ${bossesBeaten().t}.`);
   lines.push("O Vitor não gosta de se medir com fita: acompanhe só peso, fotos e treino, e nunca peça medidas.");lines.push("CHECK-INS: "+(checkins().map(c=>`${brS(parseISO(c.d))} ${fmt(c.w)}kg${c.waist?" cintura "+c.waist:""}`).join("; ")||"nenhum"));
