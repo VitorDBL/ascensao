@@ -63,7 +63,7 @@ const PLAN={
   {n:"Puxada pegada fechada (triângulo)",k:["puxada fechada","puxada triangulo","triangulo","pegada fechada","barra assistida","graviton"],s:3,lo:8,hi:12,inc:2.5,g:"costas"},
   {n:"Remada na máquina articulada (ou cavalinho)",k:["remada articulada","remada na maquina","remada maquina","cavalinho","remada curvada","serrote","remada unilateral","hammer"],s:3,lo:8,hi:12,inc:2.5,g:"costas"},
   {n:"Elevação lateral",k:["elevacao lateral"],s:4,lo:12,hi:15,inc:1,g:"ombro"},
-  {n:"Face pull",k:["face pull"],s:3,lo:12,hi:15,inc:2.5,g:"ombro"},
+  {n:"Crucifixo invertido na máquina (ou face pull)",k:["face pull","crucifixo invertido","crucifixo inverso","voador invertido","voador inverso","peck deck inverso","fly invertido","reverse fly"],s:3,lo:12,hi:15,inc:2.5,g:"ombro"},
   {n:"Crucifixo reto na máquina (voador)",k:["crucifixo","voador","peck"],s:3,lo:10,hi:12,inc:2.5,g:"peito"}]}
 };
 const SAT=[[4,8,3,15,30,40],[4,10,3,20,40,50],[5,10,4,20,50,60],[5,12,4,25,60,70],[5,15,5,25,75,80],[5,20,5,30,90,100]];
@@ -302,7 +302,7 @@ function suggest(def){const l=lastFor(def);
   if(!l.c)return "Registre a carga para eu ajustar";
   if(l.r>=def.hi)return `Subir: ${fmt(l.c+def.inc,1).replace(",0","")} kg (última ${fmt(l.c,1).replace(",0","")} kg x ${l.r})`;
   return `Manter ${fmt(l.c,1).replace(",0","")} kg e buscar ${Math.min(def.hi,(l.r||def.lo)+1)} reps`;}
-const GROUPS={peito:["supino","crucifixo","voador","peck","flexao","chest"],costas:["puxada","remada","barra","serrote","pulldown","pull"],ombro:["desenvolvimento","elevacao lateral","face pull","lateral","militar"],braco:["rosca","triceps","biceps"],perna:["agachamento","leg","stiff","bulgaro","flexora","extensora","panturrilha","gemeos","abdutora","adutora","abducao","afundo","terra"],core:["prancha","abdominal","elevacao de perna","crunch"]};
+const GROUPS={ombro:["desenvolvimento","elevacao lateral","face pull","lateral","militar","invertido","inverso","reverse fly"],peito:["supino","crucifixo","voador","peck","flexao","chest"],costas:["puxada","remada","barra","serrote","pulldown","pull"],braco:["rosca","triceps","biceps"],perna:["agachamento","leg","stiff","bulgaro","flexora","extensora","panturrilha","gemeos","abdutora","adutora","abducao","afundo","terra"],core:["prancha","abdominal","elevacao de perna","crunch"]};
 const VOLT={peito:[10,16],costas:[10,18],ombro:[10,16],braco:[6,12],perna:[10,16],core:[6,12]};
 function weekVolume(){const now=new Date();const st=new Date(now);st.setDate(st.getDate()-6);const s=isoD(st);const v={};Object.keys(GROUPS).forEach(g=>v[g]=0);
   workouts().filter(w=>w.d>=s).forEach(w=>(w.p&&w.p.exercicios||[]).forEach(e=>{const nm=normEx(e.nome);for(const g in GROUPS){if(GROUPS[g].some(k=>nm.includes(k))){v[g]+=(+e.series||1);break;}}}));return v;}
