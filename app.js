@@ -42,7 +42,7 @@ function returning(n){const d=dateOf(n);return emPeriods().some(p=>{if(!p.fim)re
 const phaseOf=n=>Math.min(5,Math.max(0,Math.floor((n-1)/30)));
 const PLAN={
  2:{t:"Superior A",ex:[
-  {n:"Supino inclinado com halter",k:["supino inclinado"],s:3,lo:8,hi:10,inc:2,g:"peito"},
+  {n:"Supino inclinado com halter",k:["supino inclinado"],s:4,lo:8,hi:10,inc:2,g:"peito"},
   {n:"Puxada frontal",k:["puxada","pulldown"],s:3,lo:8,hi:12,inc:2.5,g:"costas"},
   {n:"Desenvolvimento com halter",k:["desenvolvimento"],s:3,lo:8,hi:10,inc:2,g:"ombro"},
   {n:"Remada baixa",k:["remada baixa","remada sentad"],s:3,lo:10,hi:12,inc:2.5,g:"costas"},
@@ -305,7 +305,7 @@ function suggest(def){const l=lastFor(def);
   if(l.r>=def.hi)return `Subir: ${fmt(l.c+def.inc,1).replace(",0","")} kg (última ${fmt(l.c,1).replace(",0","")} kg x ${l.r})`;
   return `Manter ${fmt(l.c,1).replace(",0","")} kg e buscar ${Math.min(def.hi,(l.r||def.lo)+1)} reps`;}
 const GROUPS={ombro:["desenvolvimento","elevacao lateral","face pull","lateral","militar","invertido","inverso","reverse fly"],peito:["supino","crucifixo","voador","peck","flexao","chest"],costas:["puxada","remada","barra","serrote","pulldown","pull"],braco:["rosca","triceps","biceps"],perna:["agachamento","leg","stiff","bulgaro","flexora","extensora","panturrilha","gemeos","abdutora","adutora","abducao","afundo","terra"],core:["prancha","abdominal","elevacao de perna","crunch"]};
-const VOLT={peito:[10,16],costas:[10,18],ombro:[10,16],braco:[6,12],perna:[10,16],core:[6,12]};
+const VOLT={peito:[9,12],costas:[10,18],ombro:[10,16],braco:[6,12],perna:[10,16],core:[6,12]};
 function weekVolume(){const now=new Date();const st=new Date(now);st.setDate(st.getDate()-6);const s=isoD(st);const v={};Object.keys(GROUPS).forEach(g=>v[g]=0);
   workouts().filter(w=>w.d>=s).forEach(w=>(w.p&&w.p.exercicios||[]).forEach(e=>{const nm=normEx(e.nome);for(const g in GROUPS){if(GROUPS[g].some(k=>nm.includes(k))){v[g]+=(+e.series||1);break;}}}));return v;}
 
