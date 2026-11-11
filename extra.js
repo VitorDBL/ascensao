@@ -59,7 +59,7 @@ async function statusCard(){const c=document.createElement("canvas");c.width=108
   A.forEach(([k,v],i)=>{const y=500+i*110;g.fillStyle="#DCE8F2";g.font="30px 'IBM Plex Mono',monospace";g.fillText(k,100,y);g.fillStyle="#172334";g.fillRect(380,y-28,520,30);g.fillStyle="#7FE3FF";g.fillRect(380,y-28,520*v/100,30);g.fillStyle="#DCE8F2";g.fillText(String(Math.round(v)),920,y);});
   const kv=[["PESO",fmt(curW())+" kg"],["PERDIDO",fmt(Math.max(0,W0-curW()))+" kg"],["SEQUÊNCIA",streak()+" dias"],["BOSSES",String(bossesBeaten().t)]];
   kv.forEach(([k,v],i)=>{const x=100+(i%2)*460,y=1000+Math.floor(i/2)*130;g.fillStyle="#8397AA";g.font="26px 'IBM Plex Mono',monospace";g.fillText(k,x,y);g.fillStyle="#DCE8F2";g.font="600 56px 'Chakra Petch',sans-serif";g.fillText(v,x,y+60);});
-  g.fillStyle="#4A8BA3";g.font="26px 'IBM Plex Mono',monospace";g.fillText("FÍSICO DOS DEUSES · META 75 KG",100,1250);
+  g.fillStyle="#4A8BA3";g.font="26px 'IBM Plex Mono',monospace";g.fillText("ASCENSÃO · META 75 KG",100,1250);
   const blobImg=await new Promise(r=>c.toBlob(r,"image/png"));await DL.save({filename:"status-vitor-dia-"+t+".png",data:blobImg});}
 
 // ---------- MODO FOCO ----------
@@ -184,7 +184,7 @@ EXTRA.jornada=()=>{
   const t=Math.min(TOTAL,Math.max(1,TODAY()));const ws=workouts(),gym=ws.filter(w=>w.p&&w.p.tipo==="academia"),luta=ws.filter(w=>w.p&&w.p.tipo==="luta");let dn=0;for(let n=1;n<=t;n++)if(dayDone(n))dn++;
   const lvl=levelOf(xpEarned());const ach=ACH.filter(a=>a[3]()).length;const end=TODAY()>=TOTAL;
   $("#finCard").innerHTML=`<div class="sys-title">${end?"Campanha concluída":"Relatório final · prévia"}</div>
-   <div style="text-align:center;display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Físico dos Deuses · 2026–2027</span><b style="font-family:var(--f-display);font-size:40px;color:var(--ice)">RANK ${rankOf(lvl)}</b><span class="eyebrow">${PHASES[phaseOf(t)].toUpperCase()}</span></div>
+   <div style="text-align:center;display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Ascensão · 2026–2027</span><b style="font-family:var(--f-display);font-size:40px;color:var(--ice)">RANK ${rankOf(lvl)}</b><span class="eyebrow">${PHASES[phaseOf(t)].toUpperCase()}</span></div>
    <div class="kv"><div><small>Dias</small><b class="mono">${t}/180</b></div><div><small>Quests</small><b class="mono">${dn}</b></div><div><small>Treinos</small><b class="mono">${ws.length}</b></div><div><small>Horas de luta</small><b class="mono">${fmt(luta.reduce((a,w)=>a+(+w.p.minutos||60),0)/60,1)}</b></div><div><small>Peso</small><b class="mono">${fmt(W0)} → ${fmt(curW())}</b></div><div><small>Conquistas</small><b class="mono">${ach}</b></div></div>
    <p class="note" style="text-align:center">${end?"Você não é mais o jogador do dia 1. A próxima temporada começa quando você quiser: peça ao Claude para abrir a Temporada 2.":"No dia 180 esta tela vira a retrospectiva completa da campanha. Depois começa a Temporada 2."}</p>`;
 };
@@ -233,7 +233,7 @@ EXTRA.perfil=()=>{
     else if(eng==="neural"&&ready)m.textContent="Voz neural ok ("+Math.round((Date.now()-t0)/1000)+" s). Se não ouviu nada, confira se o iPhone está no silencioso e o volume.";};
   $("#setVoiceOn").onclick=()=>{const on=!Voice.enabled();LSK.set("fdd-voice",on);voice=on;voicePref=on;$("#setVoiceOn").setAttribute("aria-pressed",String(on));};
   $("#copyTopic").onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(NTFY_TOPIC).then(()=>pop("Sistema","Tópico copiado")).catch(()=>{});};
-  $("#testNtfy").onclick=async()=>{try{await fetch("https://ntfy.sh/"+NTFY_TOPIC+"?title="+encodeURIComponent("Físico dos Deuses")+"&click="+encodeURIComponent(location.href.split("#")[0])+"&tags=crossed_swords",{method:"POST",body:"Teste do Sistema: notificações funcionando."});pop("Sistema","Notificação enviada");}catch(e){pop("Sistema","Não consegui enviar.");}};
+  $("#testNtfy").onclick=async()=>{try{await fetch("https://ntfy.sh/"+NTFY_TOPIC+"?title="+encodeURIComponent("Ascensão")+"&click="+encodeURIComponent(location.href.split("#")[0])+"&tags=crossed_swords",{method:"POST",body:"Teste do Sistema: notificações funcionando."});pop("Sistema","Notificação enviada");}catch(e){pop("Sistema","Não consegui enviar.");}};
   $("#setTokBtn").onclick=async()=>{const v=$("#setTok").value.trim();if(!v)return;LSK.set("fdd2-gh-token",v);$("#setTok").value="";await Sync.run();EXTRA.perfil();};
   const off=$("#setTokOff");if(off)off.onclick=()=>{LSK.set("fdd2-gh-token","");LSK.set("fdd2-gist-id","");setSync("salvo no aparelho");EXTRA.perfil();};
   const sn=$("#syncNow");if(sn)sn.onclick=()=>Sync.run();

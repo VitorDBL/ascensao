@@ -664,7 +664,7 @@ function dataSummary(days){
   const v=weekVolume();lines.push("VOLUME 7 DIAS (séries): "+Object.keys(v).map(g=>g+" "+v[g]+" (alvo "+VOLT[g].join("-")+")").join(", "));
   const ex=exHistory();lines.push("PROGRESSÃO DE CARGA: "+(Object.values(ex).filter(e=>e.pts.some(p=>p.c)).map(e=>e.nome+": "+e.pts.filter(p=>p.c).map(p=>brS(parseISO(p.d))+" "+p.c+"kg x"+(p.r||"?")).join(" → ")).join("; ")||"sem dados"));
   return lines.join("\n");}
-const COACH_RULES=`Você é o SISTEMA, coach do jogo "Físico dos Deuses" do Vitor, com tom de treinador direto e parceiro, inspirado no sistema de Solo Leveling sem exagero. Regras: responda em português do Brasil, frases curtas, sem travessões. Use APENAS os dados fornecidos e diga claramente quando faltam dados; nunca invente números. Não recomende cortes agressivos de calorias, jejuns, nem mudanças bruscas de treino; dieta, calorias e remédio são decididos com o médico e a nutricionista. Sinalize com calma se a perda passar de ~1 kg por semana por 2 semanas seguidas, se a força cair, se houver dor recorrente, sono ruim frequente ou muitas refeições por ansiedade, e sugira conversar com o profissional certo quando fizer sentido. Seja específico com os números dele.`;
+const COACH_RULES=`Você é o SISTEMA, coach do jogo "Ascensão" do Vitor, com tom de treinador direto e parceiro, inspirado no sistema de Solo Leveling sem exagero. Regras: responda em português do Brasil, frases curtas, sem travessões. Use APENAS os dados fornecidos e diga claramente quando faltam dados; nunca invente números. Não recomende cortes agressivos de calorias, jejuns, nem mudanças bruscas de treino; dieta, calorias e remédio são decididos com o médico e a nutricionista. Sinalize com calma se a perda passar de ~1 kg por semana por 2 semanas seguidas, se a força cair, se houver dor recorrente, sono ruim frequente ou muitas refeições por ansiedade, e sugira conversar com o profissional certo quando fizer sentido. Seja específico com os números dele.`;
 let chat=[],chatCtl=null,voice=LSK.get("fdd-voice")===true,chatLoaded=false,toolsOK=null;
 function saveChat(){put("perfil","chat",{msgs:chat.filter(m=>!m.pending).slice(-40).map(m=>({role:m.role,content:String(m.content).slice(0,4000),acts:m.acts||[]}))});}
 function speak(t){if(!voice)return;Voice.say(t,true);}
@@ -802,7 +802,7 @@ const ACH=[
  ["sboss","Caçador","Vencer um boss surpresa",()=>bossesBeaten().s>=1],["mboss","Chefão abatido","Vencer o primeiro chefão",()=>bossesBeaten().m>=1],["boss10","Lenda","10 bosses vencidos",()=>bossesBeaten().t>=10],
  ["luta10","Casca grossa","10 treinos de luta",()=>workouts().filter(w=>w.p&&w.p.tipo==="luta").length>=10],
  ["pr","Mais forte","Superar a primeira carga",()=>Object.values(exHistory()).some(e=>{const c=e.pts.filter(p=>p.c);return c.length>1&&Math.max(...c.map(p=>p.c))>c[0].c;})],
- ["kg5","Menos 5","Perder 5 kg",()=>curW()<=85],["kg10","Menos 10","Perder 10 kg",()=>curW()<=80],["meta","Físico dos Deuses","Chegar aos 75 kg",()=>curW()<=75],
+ ["kg5","Menos 5","Perder 5 kg",()=>curW()<=85],["kg10","Menos 10","Perder 10 kg",()=>curW()<=80],["meta","Ascensão","Chegar aos 75 kg",()=>curW()<=75],
  ["ref50","Diário de bordo","50 refeições registradas",()=>meals().length>=50],
  ["agua7","Hidratado","7 dias com 2 L de água",()=>Object.values(S.diario).filter(d=>(+d.agua||0)>=WATER).length>=7],
  ["sono7","Recuperado","7 noites com 7 h ou mais",()=>Object.values(S.diario).filter(d=>(+d.sono||0)>=7).length>=7],
@@ -836,7 +836,7 @@ $("#rAdd").onclick=()=>{const n=$("#rName").value.trim(),c=parseInt($("#rCost").
 function csv(rows){return rows.map(r=>r.map(v=>{const s=String(v??"");return /[",\n;]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(",")).join("\n");}
 $$("[data-exp]").forEach(b=>b.onclick=async()=>{$("#expErr").textContent="";if(!DL){$("#expErr").textContent="Não consegui exportar.";return;}
   const k=b.dataset.exp;let filename,data;
-  if(k==="json"){filename="fisico-dos-deuses-backup-"+todayISO()+".json";data=JSON.stringify(S,null,1);}
+  if(k==="json"){filename="ascensao-backup-"+todayISO()+".json";data=JSON.stringify(S,null,1);}
   else if(k==="medidas"){filename="medidas.csv";data=csv([["data","peso","cintura","peito","braco","coxa","quadril"]].concat(checkins().map(c=>[c.d,c.w,c.waist,c.peito,c.braco,c.coxa,c.quadril])));}
   else if(k==="refeicoes"){filename="refeicoes.csv";data=csv([["data","hora","refeicao","motivo","livre","prato","proteina","carbo","gordura","kcal"]].concat(meals().map(m=>[m.d,m.at,m.tipo,m.fome,m.livre?"sim":"",m.a&&m.a.prato||m.texto,m.a&&m.a.total&&m.a.total.proteina,m.a&&m.a.total&&m.a.total.carbo,m.a&&m.a.total&&m.a.total.gordura,m.a&&m.a.total&&m.a.total.kcal])));}
   else{filename="treinos.csv";const rows=[["data","tipo","modalidade","minutos","exercicio","series","reps","carga_kg"]];workouts().forEach(w=>{const p=w.p||{};if(p.exercicios&&p.exercicios.length)p.exercicios.forEach(e=>rows.push([w.d,p.tipo,p.modalidade,p.minutos,e.nome,e.series,e.reps,e.carga_kg]));else rows.push([w.d,p.tipo,p.modalidade,p.minutos,w.texto,"","",""]);});data=csv(rows);}

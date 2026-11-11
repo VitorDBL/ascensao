@@ -17,7 +17,7 @@ jobs:
       - name: Enviar ou agendar notificações
         env:
           NTFY_TOPIC: ${{ vars.NTFY_TOPIC || 'fdd-vitor-c464ff03bb56' }}
-          APP_URL: https://vitordbl.github.io/fisico-dos-deuses/
+          APP_URL: https://vitordbl.github.io/ascensao/
           MODO: ${{ github.event.inputs.modo || 'agendar' }}
         run: python3 scripts/notificar.py
       - name: Manter o agendamento ativo
