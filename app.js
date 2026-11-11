@@ -33,8 +33,8 @@ const STORY=[
  ["O Caçador","Você já não reage aos desafios, você vai atrás deles. Os bosses ficam mais duros e a definição começa a aparecer de verdade."],
  ["O Monarca","Os resultados são visíveis. Agora a missão é proteger o que você construiu e lapidar os últimos detalhes."],
  ["O Deus","A prova final. Trinta dias para fechar a campanha do jeito que você imaginou no dia 1."]];
-const SIDE={sem:["Caminhar 15 minutos no dia","Preparar a marmita de amanhã","Alongar 10 minutos antes de dormir","Escrever uma vitória no diário","Treinar uma técnica nova por 5 minutos","Subir de escada em vez de elevador","Comer uma fruta no lanche","Treinar 10 minutos de um movimento novo","Ler um capítulo de um livro","Aprender um conhecimento novo e anotar no diário"],
- fds:["Mobilidade 10 minutos","Escrever uma vitória no diário","Preparar as marmitas da semana","Alongamento de 15 minutos","Organizar a mochila de treino da semana","Treinar 10 minutos de um movimento novo","Ler um capítulo de um livro","Aprender um conhecimento novo e anotar no diário"]};
+const SIDE={sem:["Caminhar 15 minutos no dia","Lavar a louça do dia","Alongar 10 minutos antes de dormir","Escrever uma vitória no diário","Treinar uma técnica nova por 5 minutos","Subir de escada em vez de elevador","Comer uma fruta no lanche","Treinar 10 minutos de um movimento novo","Ler um capítulo de um livro","Aprender um conhecimento novo e anotar no diário"],
+ fds:["Mobilidade 10 minutos","Escrever uma vitória no diário","Lavar a louça do dia","Alongamento de 15 minutos","Organizar a mochila de treino da semana","Treinar 10 minutos de um movimento novo","Ler um capítulo de um livro","Aprender um conhecimento novo e anotar no diário"]};
 function sideFor(n){const wd=dateOf(n).getDay(),p=(wd===0||wd===6)?SIDE.fds:SIDE.sem;return p[hash(n*13+5)%p.length];}
 function emPeriods(){return (S.perfil.emergencia&&S.perfil.emergencia.periodos)||[];}
 function emergencyOn(n){const d=isoD(dateOf(n));return emPeriods().find(p=>p.inicio<=d&&(!p.fim||d<=p.fim))||null;}
