@@ -61,7 +61,7 @@ const PLAN={
  5:{t:"Superior B",ex:[
   {n:"Supino reto ou máquina",k:["supino reto","supino maquina","supino na maquina","chest press"],s:3,lo:8,hi:10,inc:2.5,g:"peito"},
   {n:"Puxada pegada fechada (triângulo)",k:["puxada fechada","puxada triangulo","triangulo","pegada fechada","barra assistida","graviton"],s:3,lo:8,hi:12,inc:2.5,g:"costas"},
-  {n:"Remada serrote",k:["serrote","remada unilateral"],s:3,lo:8,hi:10,inc:2,g:"costas"},
+  {n:"Remada na máquina articulada (ou cavalinho)",k:["remada articulada","remada na maquina","remada maquina","cavalinho","remada curvada","serrote","remada unilateral","hammer"],s:3,lo:8,hi:12,inc:2.5,g:"costas"},
   {n:"Elevação lateral",k:["elevacao lateral"],s:4,lo:12,hi:15,inc:1,g:"ombro"},
   {n:"Face pull",k:["face pull"],s:3,lo:12,hi:15,inc:2.5,g:"ombro"},
   {n:"Crucifixo reto na máquina (voador)",k:["crucifixo","voador","peck"],s:3,lo:10,hi:12,inc:2.5,g:"peito"}]}
