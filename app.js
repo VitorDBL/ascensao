@@ -558,7 +558,51 @@ function dayTotals(date){return mealsOn(date).reduce((a,m)=>{const t=m.a&&m.a.to
 function mealCard(a){if(!a)return"";const t=a.total||{};return `<div class="macros"><div><small>Proteína</small><b class="mono">${Math.round(t.proteina||0)} g</b></div><div><small>Carbo</small><b class="mono">${Math.round(t.carbo||0)} g</b></div><div><small>Gordura</small><b class="mono">${Math.round(t.gordura||0)} g</b></div><div><small>≈ kcal</small><b class="mono">${Math.round(t.kcal||0)}</b></div></div>
   ${a.itens&&a.itens.length?`<div class="tbl"><table><thead><tr><th>Alimento</th><th>Qtd.</th><th>P</th><th>C</th><th>G</th></tr></thead><tbody>${a.itens.map(i=>`<tr><td>${esc(i.alimento)}</td><td>${esc(i.quantidade)}</td><td>${Math.round(i.proteina||0)}</td><td>${Math.round(i.carbo||0)}</td><td>${Math.round(i.gordura||0)}</td></tr>`).join("")}</tbody></table></div>`:""}
   ${a.ponto_forte?`<p class="note">+ ${esc(a.ponto_forte)}</p>`:""}${a.ajuste?`<p class="note">→ ${esc(a.ajuste)}</p>`:""}`;}
-function renderNutricao(){
+// ===== estimativa local de macros (tabela TACO aproximada, por 100 g; u = gramas de 1 unidade) =====
+const FOODS=[
+ ["arroz integral",124,2.6,25.8,1,120],["arroz",128,2.5,28.1,.2,120],["feijao",76,4.8,13.6,.5,90],["batata doce",77,.6,18.4,.1,150],["batata frita",267,5,35,13,100],["pure",88,1.6,14,3,120],["batata",52,1.2,11.9,0,120],
+ ["mandioca",125,.6,30.1,.3,120],["macarrao",102,3.4,19.9,1.2,150],["lasanha",160,9,15,7,250],["cuscuz",113,2.2,25.3,.7,120],["tapioca",240,0,60,0,50],["aveia",394,13.9,66.6,8.5,30],["granola",420,9,65,14,40],
+ ["pao de forma",253,12,44,2.7,25],["pao integral",253,12,44,2.7,25],["pao de queijo",363,5.1,34.2,24.6,20],["pao",300,8,58.6,3.1,50],["torrada",390,11,75,5,10],["bolacha",440,9,68,15,8],["biscoito",440,9,68,15,8],
+ ["frango frito",250,28,6,13,120],["frango",163,31.5,0,3.2,120],["peito de peru",110,18,3,3,15],["patinho",219,35.9,0,7.3,120],["carne moida",212,26.7,0,10.9,100],["picanha",289,26,0,20,150],["carne",219,32,0,9.5,120],["bife",219,32,0,9.5,120],
+ ["file mignon",220,32.8,0,8.8,120],["linguica",296,16,0,25,60],["salsicha",257,13,3,22,50],["hamburguer",250,17,6,18,120],["tilapia",128,26,0,2.7,120],["salmao",208,20,0,13,120],["peixe",128,26,0,2.7,120],["atum",166,26,0,6,120],["sardinha",220,25,0,13,80],
+ ["omelete",154,11,1,12,120],["ovo",146,13.3,.6,9.5,50],["clara",50,11,.7,.2,33],["whey",400,80,8,6,30],["barrinha",380,33,33,13,45],["barra de proteina",380,33,33,13,45],
+ ["leite",61,3,4.5,3.3,200],["iogurte grego",120,8,8,6,100],["iogurte",51,4.1,1.9,3,170],["requeijao",257,9.6,2.4,23.4,30],["cottage",98,11,3.4,4.3,30],["mussarela",330,22.6,3,25.2,20],["queijo",330,22.6,3,25.2,20],["presunto",94,14.3,2.1,2.7,15],
+ ["manteiga",726,.4,0,82.4,10],["margarina",596,0,0,67,10],["azeite",884,0,0,100,13],["pasta de amendoim",590,25,20,50,15],["amendoim",544,27,20,44,30],["castanha",643,14.5,15,63,20],
+ ["banana",98,1.3,26,.1,90],["maca",56,.3,15.2,0,130],["mamao",40,.5,10.4,.1,150],["morango",30,.9,6.8,.3,100],["laranja",37,1,8.9,.1,150],["uva",53,.7,13.6,.2,100],["abacate",96,1.2,6,8.4,100],["manga",64,.4,16.7,.3,150],["melancia",33,.9,8.1,0,200],
+ ["salada",15,1.3,2.5,.2,80],["alface",11,1.3,1.7,.2,40],["tomate",15,1.1,3.1,.2,80],["brocolis",25,2.1,4.4,.5,80],["cenoura",34,.8,7.7,.2,60],["legumes",35,1.5,7,.3,100],
+ ["pizza",270,11,33,10,110],["coxinha",283,9,33,13,110],["pastel",310,8,32,17,100],["esfiha",280,10,38,10,80],["acai",250,2,30,13,300],["sorvete",200,3.5,24,10,100],["chocolate",540,7,59,30,25],["bolo",320,5,50,12,70],
+ ["acucar",387,0,99.5,0,5],["mel",309,0,84,0,15],["refrigerante",40,0,10.5,0,350],["suco",45,.4,11,0,250],["cafe com leite",35,1.7,2.6,1.8,200],["cafe",2,.1,0,0,100],["cerveja",41,.3,3.6,0,350]];
+const WORDN={um:1,uma:1,dois:2,duas:2,tres:3,quatro:4,cinco:5,seis:6,meio:.5,meia:.5};
+const UNITG={colher:15,colheres:15,fatia:null,fatias:null,concha:100,conchas:100,copo:200,copos:200,xicara:160,scoop:30,scoops:30,prato:300,pote:170,lata:null,unidade:null,unidades:null};
+function estimateMealLocal(texto){
+  const n=normEx(texto);if(!n||n==="(foto)")return null;
+  const parts=n.split(/,|;|\+|\s+e\s+|\s+com\s+|\n/).map(x=>x.trim()).filter(Boolean);const itens=[];
+  parts.forEach(pt=>{const f=FOODS.find(x=>pt.includes(x[0]));if(!f)return;
+    let g=null;const m=pt.match(/(\d+(?:[.,]\d+)?)\s*(kg|g|gr|gramas|ml|l)\b/);
+    if(m){g=+m[1].replace(",",".");if(m[2]==="kg"||m[2]==="l")g*=1000;}
+    else{const c=pt.match(/(\d+(?:[.,]\d+)?)|\b(um|uma|dois|duas|tres|quatro|cinco|seis|meio|meia)\b/);const cnt=c?(c[1]?+c[1].replace(",","."):WORDN[c[2]]):1;
+      const u=Object.keys(UNITG).find(k=>new RegExp("\\b"+k+"\\b").test(pt));g=cnt*((u&&UNITG[u])||f[5]);}
+    const k=g/100;itens.push({alimento:f[0],quantidade:Math.round(g)+" g",proteina:Math.round(f[2]*k),carbo:Math.round(f[3]*k),gordura:Math.round(f[4]*k),kcal:Math.round(f[1]*k)});});
+  if(!itens.length)return null;const tot=k=>itens.reduce((a,i)=>a+i[k],0);
+  return{prato:texto.slice(0,80),itens,total:{proteina:tot("proteina"),carbo:tot("carbo"),gordura:tot("gordura"),kcal:tot("kcal")},qualidade:3,ponto_forte:"",ajuste:"",local:true};}
+const zeroMacros=a=>!a||!a.total||!((a.total.proteina||0)+(a.total.carbo||0)+(a.total.gordura||0)+(a.total.kcal||0));
+function fixTotals(a){if(a&&zeroMacros(a)&&a.itens&&a.itens.length){const t=k=>a.itens.reduce((s,i)=>s+(+i[k]||0),0);a.total={proteina:t("proteina"),carbo:t("carbo"),gordura:t("gordura"),kcal:t("kcal")};}return a;}
+const MEAL_PROMPT=(rec,texto,hasFile)=>`Você é um nutricionista esportivo analisando a refeição de um homem de 21 anos, 1,76 m, cerca de 90 kg, que treina luta e musculação para perder gordura com acompanhamento médico.${hasFile?" Identifique os alimentos da foto anexada e estime as quantidades visíveis.":""} Use a descrição do usuário quando houver, ela tem prioridade sobre a foto. Estime macros com base em tabelas como a TACO. Não faça sermão nem dê meta de calorias. Responda só com JSON: {"prato":"nome curto","itens":[{"alimento":"nome","quantidade":"ex.: 120 g ou 1 concha","proteina":g,"carbo":g,"gordura":g,"kcal":número}],"total":{"proteina":g,"carbo":g,"gordura":g,"kcal":número},"qualidade":inteiro 1 a 5 considerando proteína, comida de verdade e vegetais,"ponto_forte":"frase curta","ajuste":"uma sugestão curta e prática para a próxima, ou string vazia"}${rec.livre?". É a refeição livre planejada da semana: não penalize nem critique.":""}\n\nRefeição (${rec.tipo}): ${texto||"ver foto"}`;
+function cleanMeal(a){if(!a||typeof a!=="object")return null;if(Array.isArray(a))a=a[0]||{};const num=v=>Math.max(0,Math.round(+v||0));
+  const r={prato:String(a.prato||"").slice(0,80),itens:Array.isArray(a.itens)?a.itens.slice(0,15).map(i=>({alimento:String(i.alimento||"").slice(0,50),quantidade:String(i.quantidade||"").slice(0,30),proteina:num(i.proteina),carbo:num(i.carbo),gordura:num(i.gordura),kcal:num(i.kcal)})):[],
+    total:{proteina:num(a.total&&a.total.proteina),carbo:num(a.total&&a.total.carbo),gordura:num(a.total&&a.total.gordura),kcal:num(a.total&&a.total.kcal)},qualidade:Math.max(1,Math.min(5,Math.round(+a.qualidade||3))),ponto_forte:String(a.ponto_forte||"").slice(0,140),ajuste:String(a.ajuste||"").slice(0,160)};
+  fixTotals(r);return zeroMacros(r)?null:r;}
+async function analyzeMeal(rec,texto,file){let err="";
+  if(SAMPLE){try{const a=cleanMeal(await SAMPLE.json(MEAL_PROMPT(rec,texto,!!file),{modelTier:"default",images:file?[file]:undefined}));if(a)return{a};err="resposta sem macros";}
+    catch(e){if(e&&e.code==="not_granted")SAMPLE=null;err=e&&(e.code==="rate_limited"?"limite grátis do Gemini por minuto":e.message||e.code)||"erro";}}
+  const loc=estimateMealLocal(texto);return{a:loc,err};}
+async function reanalyzeMeal(id){const m=S.refeicoes[id];if(!m)return;pop("Sistema","Recalculando os macros...");
+  let file=null;if(m.foto&&BLOBURL[m.foto]){try{file=await (await fetch(BLOBURL[m.foto])).blob();}catch(e){}}
+  const r=await analyzeMeal(m,m.texto==="(foto)"?"":m.texto,file);
+  if(r.a){put("refeicoes",id,{...m,a:r.a},{noUndo:true});pop("Macros calculados",r.a.local?"Estimativa pela tabela (sem o Gemini)":r.a.prato);}
+  else pop("Sistema","Não consegui calcular"+(r.err?": "+r.err:"")+". Descreva os alimentos com quantidades e tente de novo.");}
+let _fixM=false;function fixMeals(){if(_fixM)return;_fixM=true;Object.entries(S.refeicoes).forEach(([id,m])=>{if(m&&zeroMacros(m.a)){const a=fixTotals(m.a&&m.a.itens&&m.a.itens.length?{...m.a}:null)||estimateMealLocal(m.texto);if(a&&!zeroMacros(a))put("refeicoes",id,{...m,a:{...(m.a||{}),...a,prato:(m.a&&m.a.prato)||a.prato}},{noUndo:true});}});}
+function renderNutricao(){if(loaded)setTimeout(fixMeals,0);
   const vd=$("#mView").value||todayISO(),t=dayTotals(vd),ms=mealsOn(vd),anx=ms.filter(m=>m.fome==="ansiedade"||m.fome==="tedio").length;
   $("#mDay").innerHTML=`<div><small>Proteína</small><b class="mono">${Math.round(t.p)} g</b></div><div><small>Carbo</small><b class="mono">${Math.round(t.c)} g</b></div><div><small>Gordura</small><b class="mono">${Math.round(t.g)} g</b></div><div><small>≈ kcal</small><b class="mono">${Math.round(t.k)}</b></div><div><small>Refeições</small><b class="mono">${ms.length}</b></div><div><small>Ansiedade</small><b class="mono" style="color:${anx?"var(--heat)":"inherit"}">${anx}</b></div>`;
   const all=meals(),weeks=[];for(let w=3;w>=0;w--){const end=new Date();end.setDate(end.getDate()-w*7);const st=new Date(end);st.setDate(st.getDate()-6);const a=isoD(st),b=isoD(end);
@@ -572,9 +616,10 @@ function renderNutricao(){
   $$("#favList [data-fd]").forEach(b=>b.onclick=()=>del("favoritos",b.dataset.fd));
   $("#mCount").textContent=all.length+" registros";
   $("#mList").innerHTML=all.length?all.slice(0,50).map(m=>`<div class="item"><div><div class="meta">${brD(parseISO(m.d))} ${esc(m.at||"")} · ${esc(m.tipo||"")} · ${esc(HUNGER[m.fome]||"")}${m.livre?" · LIVRE":""}</div><div class="ttl">${esc(m.a&&m.a.prato||m.texto)}</div>
-    ${m.a&&m.a.total?`<div class="note mono">P ${Math.round(m.a.total.proteina||0)} · C ${Math.round(m.a.total.carbo||0)} · G ${Math.round(m.a.total.gordura||0)} · ≈${Math.round(m.a.total.kcal||0)} kcal${m.a.qualidade?` · <span class="stars">${"★".repeat(m.a.qualidade)}${"☆".repeat(5-m.a.qualidade)}</span>`:""}</div>`:`<div class="note">${esc(m.texto)}</div>`}
-    ${m.foto?`<img src="${blob(m.foto)}" alt="Foto da refeição">`:""}</div><div class="act"><button class="linkbtn" data-fav="${m._id}" aria-label="Favoritar">☆ favorito</button><button class="linkbtn" data-del="${m._id}">apagar</button></div></div>`).join(""):`<div class="empty">Nenhuma refeição registrada. Fotografe o próximo prato.</div>`;
+    ${m.a&&!zeroMacros(m.a)?`<div class="note mono">${m.a.local?"estimativa pela tabela · ":""}P ${Math.round(m.a.total.proteina||0)} · C ${Math.round(m.a.total.carbo||0)} · G ${Math.round(m.a.total.gordura||0)} · ≈${Math.round(m.a.total.kcal||0)} kcal${m.a.qualidade?` · <span class="stars">${"★".repeat(m.a.qualidade)}${"☆".repeat(5-m.a.qualidade)}</span>`:""}</div>`:`<div class="note">${esc(m.texto)}</div>`}
+    ${m.foto?`<img src="${blob(m.foto)}" alt="Foto da refeição">`:""}</div><div class="act"><button class="linkbtn" data-fav="${m._id}" aria-label="Favoritar">☆ favorito</button>${zeroMacros(m.a)?`<button class="linkbtn" data-re="${m._id}">calcular macros</button>`:""}<button class="linkbtn" data-del="${m._id}">apagar</button></div></div>`).join(""):`<div class="empty">Nenhuma refeição registrada. Fotografe o próximo prato.</div>`;
   $$("#mList [data-del]").forEach(b=>b.onclick=()=>askDel("refeicoes",b.dataset.del));
+  $$("#mList [data-re]").forEach(b=>b.onclick=()=>reanalyzeMeal(b.dataset.re));
   $$("#mList [data-fav]").forEach(b=>b.onclick=()=>{const m=S.refeicoes[b.dataset.fav];put("favoritos",newId(),{nome:(m.a&&m.a.prato||m.texto||"Refeição").slice(0,60),texto:m.texto,tipo:m.tipo,a:m.a||null});pop("Sistema","Adicionado aos favoritos");});
 }
 $("#mView").onchange=renderNutricao;
@@ -583,12 +628,9 @@ $("#mBtn").onclick=async()=>{const texto=$("#mText").value.trim(),file=$("#mPhot
   const rec={d:$("#mDate").value||todayISO(),at:new Date().toTimeString().slice(0,5),tipo:$("#mKind").value,fome:$("#mHunger").value,livre:$("#mFree").checked,texto:texto||"(foto)",fa:+(($("#mFA")||{}).value)||null,sd:+(($("#mSD")||{}).value)||null};
   $("#mBtn").disabled=true;$("#mStatus").textContent=SAMPLE?"Escaneando o prato...":"Registrando...";
   try{if(file&&ASSETS){try{const r=await ASSETS.upload(file);rec.foto=r.id;}catch(e){}}
-    if(SAMPLE){try{const a=await SAMPLE.json(`Você é um nutricionista esportivo analisando a refeição de um homem de 21 anos, 1,76 m, cerca de 90 kg, que treina luta e musculação para perder gordura com acompanhamento médico.${file?" Identifique os alimentos da foto anexada e estime as quantidades visíveis.":""} Use a descrição do usuário quando houver, ela tem prioridade sobre a foto. Estime macros com base em tabelas como a TACO. Não faça sermão nem dê meta de calorias. Responda só com JSON: {"prato":"nome curto","itens":[{"alimento":"nome","quantidade":"ex.: 120 g ou 1 concha","proteina":g,"carbo":g,"gordura":g,"kcal":número}],"total":{"proteina":g,"carbo":g,"gordura":g,"kcal":número},"qualidade":inteiro 1 a 5 considerando proteína, comida de verdade e vegetais,"ponto_forte":"frase curta","ajuste":"uma sugestão curta e prática para a próxima, ou string vazia"}${rec.livre?". É a refeição livre planejada da semana: não penalize nem critique.":""}\n\nRefeição (${rec.tipo}): ${texto||"ver foto"}`,{modelTier:"default",images:file?[file]:undefined});
-      if(a&&typeof a==="object"){const num=v=>Math.max(0,Math.round(+v||0));rec.a={prato:String(a.prato||"").slice(0,80),itens:Array.isArray(a.itens)?a.itens.slice(0,15).map(i=>({alimento:String(i.alimento||"").slice(0,50),quantidade:String(i.quantidade||"").slice(0,30),proteina:num(i.proteina),carbo:num(i.carbo),gordura:num(i.gordura),kcal:num(i.kcal)})):[],
-        total:{proteina:num(a.total&&a.total.proteina),carbo:num(a.total&&a.total.carbo),gordura:num(a.total&&a.total.gordura),kcal:num(a.total&&a.total.kcal)},qualidade:Math.max(1,Math.min(5,Math.round(+a.qualidade||3))),ponto_forte:String(a.ponto_forte||"").slice(0,140),ajuste:String(a.ajuste||"").slice(0,160)};}}
-      catch(e){if(e&&e.code==="not_granted")SAMPLE=null;$("#mStatus").textContent="Registrei sem a análise.";}}
+    {const r=await analyzeMeal(rec,texto,file);if(r.a)rec.a=r.a;if(r.err)$("#mStatus").textContent="Gemini falhou ("+r.err+")"+(r.a?", usei a tabela.":".");}
     put("refeicoes",newId(),rec);$("#mResult").innerHTML=rec.a?`<div class="sub">${esc(rec.a.prato)}</div>`+mealCard(rec.a):"";
-    $("#mText").value="";$("#mPhoto").value="";$("#mFree").checked=false;$("#mStatus").textContent=rec.a?"":"Registrado.";pop("Refeição registrada","+"+XP.meal+" XP");}
+    $("#mText").value="";$("#mPhoto").value="";$("#mFree").checked=false;if(!$("#mStatus").textContent.startsWith("Gemini"))$("#mStatus").textContent=rec.a?"":"Registrado.";pop("Refeição registrada","+"+XP.meal+" XP");}
   finally{$("#mBtn").disabled=false;}};
 $("#shopBtn").onclick=async()=>{const out=$("#shopOut");if(!SAMPLE){out.innerHTML=`<p class="note">Configure a chave grátis do Sistema em Perfil › Ajustes.</p>`;return;}
   const favs=Object.values(S.favoritos).map(f=>f.nome+(f.texto?" ("+f.texto+")":"")).slice(0,15),recent=meals().slice(0,25).map(m=>m.a&&m.a.prato||m.texto);
@@ -660,10 +702,11 @@ const TOOLS=[
   execute:i=>{const p={tipo:["academia","luta","cardio","outro"].includes(i.tipo)?i.tipo:"outro",modalidade:String(i.modalidade||"").slice(0,40),minutos:+i.minutos||null,intensidade:Math.max(1,Math.min(5,Math.round(+i.intensidade||3))),
     exercicios:Array.isArray(i.exercicios)?i.exercicios.slice(0,20).map(e=>({nome:String(e.nome||"").toLowerCase().slice(0,60),series:+e.series||null,reps:+e.reps||null,carga_kg:+e.carga_kg||null})):[],tecnicas:Array.isArray(i.tecnicas)?i.tecnicas.slice(0,15).map(t=>String(t).slice(0,50)):[],resumo:String(i.resumo||"").slice(0,160)};
     const d=/^\d{4}-\d{2}-\d{2}$/.test(i.data||"")?i.data:todayISO();put("treinos",newId(),{d,texto:(p.resumo||p.modalidade||p.tipo),p});pushAct("Treino registrado +"+XP.treino+" XP");return "ok, "+p.exercicios.length+" exercícios";}},
- {name:"registrar_refeicao",description:"Registra uma refeição com macros estimados por você (tabela TACO). fome: fome, ansiedade, tedio, social ou horario.",
+ {name:"registrar_refeicao",description:"Registra uma refeição. SEMPRE preencha proteina, carbo, gordura e kcal estimados por você (tabela TACO), nunca deixe zerado. fome: fome, ansiedade, tedio, social ou horario.",
   inputSchema:{type:"object",properties:{prato:{type:"string"},texto:{type:"string"},tipo:{type:"string"},fome:{type:"string"},livre:{type:"boolean"},proteina:{type:"number"},carbo:{type:"number"},gordura:{type:"number"},kcal:{type:"number"},qualidade:{type:"integer"}},required:["prato"]},
   execute:i=>{const r=v=>Math.max(0,Math.round(+v||0));const rec={d:todayISO(),at:new Date().toTimeString().slice(0,5),tipo:String(i.tipo||"Refeição").slice(0,20),fome:["fome","ansiedade","tedio","social","horario"].includes(i.fome)?i.fome:"fome",livre:!!i.livre,texto:String(i.texto||i.prato).slice(0,200),
     a:{prato:String(i.prato).slice(0,80),itens:[],total:{proteina:r(i.proteina),carbo:r(i.carbo),gordura:r(i.gordura),kcal:r(i.kcal)},qualidade:Math.max(1,Math.min(5,Math.round(+i.qualidade||3))),ponto_forte:"",ajuste:""}};
+    if(zeroMacros(rec.a)){const loc=estimateMealLocal(rec.texto+", "+i.prato);if(loc)rec.a={...loc,prato:rec.a.prato};}
     put("refeicoes",newId(),rec);pushAct("Refeição: "+rec.a.prato);return "ok";}},
  {name:"registrar_agua",description:"Soma água bebida hoje, em ml.",inputSchema:{type:"object",properties:{ml:{type:"number"}},required:["ml"]},
   execute:i=>{const ml=Math.max(-3000,Math.min(5000,+i.ml||0));const di=diaryOf(todayISO());const v=Math.max(0,(+di.agua||0)+ml);saveDiary({agua:v});pushAct("Água: "+fmt(v/1000,1)+" L");return "total "+v+" ml";}},
