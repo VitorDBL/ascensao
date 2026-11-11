@@ -65,7 +65,8 @@ const PLAN={
   {n:"Elevação lateral",k:["elevacao lateral"],s:4,lo:12,hi:15,inc:1,g:"ombro"},
   {n:"Crucifixo invertido na máquina (ou face pull)",k:["face pull","crucifixo invertido","crucifixo inverso","voador invertido","voador inverso","peck deck inverso","fly invertido","reverse fly"],s:3,lo:12,hi:15,inc:2.5,g:"ombro"},
   {n:"Crucifixo reto na máquina (voador)",k:["crucifixo","voador","peck"],s:3,lo:10,hi:12,inc:2.5,g:"peito"},
-  {n:"Tríceps testa",k:["triceps testa","testa","skull"],s:3,lo:10,hi:12,inc:1,g:"braco"}]}
+  {n:"Tríceps testa",k:["triceps testa","testa","skull"],s:3,lo:10,hi:12,inc:1,g:"braco"},
+  {n:"Rosca na máquina sentado (Scott)",k:["scott","maquina de biceps","biceps na maquina","rosca na maquina","rosca maquina","rosca martelo","martelo"],s:3,lo:10,hi:12,inc:2.5,g:"braco"}]}
 };
 const SAT=[[4,8,3,15,30,40],[4,10,3,20,40,50],[5,10,4,20,50,60],[5,12,4,25,60,70],[5,15,5,25,75,80],[5,20,5,30,90,100]];
 function hash(n){let x=Math.imul(n^0x9e3779b9,2654435761)>>>0;x^=x>>>15;x=Math.imul(x,2246822519)>>>0;x^=x>>>13;x=Math.imul(x,3266489917)>>>0;x^=x>>>16;return x>>>0;}
