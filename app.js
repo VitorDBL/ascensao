@@ -60,11 +60,11 @@ const PLAN={
   {n:"Prancha",k:["prancha"],s:3,lo:40,hi:60,inc:0,g:"core",tempo:true}]},
  5:{t:"Superior B",ex:[
   {n:"Supino reto ou máquina",k:["supino reto","supino maquina","supino na maquina","chest press"],s:3,lo:8,hi:10,inc:2.5,g:"peito"},
-  {n:"Barra fixa",k:["barra fixa","barra"],s:3,lo:5,hi:10,inc:0,g:"costas"},
+  {n:"Puxada pegada fechada (triângulo)",k:["puxada fechada","puxada triangulo","triangulo","pegada fechada","barra assistida","graviton"],s:3,lo:8,hi:12,inc:2.5,g:"costas"},
   {n:"Remada serrote",k:["serrote","remada unilateral"],s:3,lo:8,hi:10,inc:2,g:"costas"},
   {n:"Elevação lateral",k:["elevacao lateral"],s:4,lo:12,hi:15,inc:1,g:"ombro"},
   {n:"Face pull",k:["face pull"],s:3,lo:12,hi:15,inc:2.5,g:"ombro"},
-  {n:"Crucifixo inclinado",k:["crucifixo","voador","peck"],s:2,lo:10,hi:12,inc:1,g:"peito"}]}
+  {n:"Crucifixo reto na máquina (voador)",k:["crucifixo","voador","peck"],s:3,lo:10,hi:12,inc:2.5,g:"peito"}]}
 };
 const SAT=[[4,8,3,15,30,40],[4,10,3,20,40,50],[5,10,4,20,50,60],[5,12,4,25,60,70],[5,15,5,25,75,80],[5,20,5,30,90,100]];
 function hash(n){let x=Math.imul(n^0x9e3779b9,2654435761)>>>0;x^=x>>>15;x=Math.imul(x,2246822519)>>>0;x^=x>>>13;x=Math.imul(x,3266489917)>>>0;x^=x>>>16;return x>>>0;}
