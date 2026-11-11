@@ -1,16 +1,13 @@
 import os, datetime, urllib.request, zoneinfo
 tz = zoneinfo.ZoneInfo("America/Sao_Paulo")
-hoje = datetime.datetime.now(tz).date()
+agora = datetime.datetime.now(tz)
+hoje = agora.date()
 inicio = datetime.date(2026, 11, 9)
-n = (hoje - inicio).days + 1
-noite = os.environ.get("EVENT_SCHEDULE", "") == "30 23 * * *"
-dow = hoje.weekday()  # 0 = segunda
 quests = {0: "kickboxing", 1: "Superior A na academia", 2: "kickboxing", 3: "Inferior + core na academia",
           4: "Superior B na academia", 5: "desafio em casa (e refeição livre)", 6: "treino em casa"}
 especiais = {datetime.date(2026, 11, 11): "Inferior + core na academia",
              datetime.date(2026, 11, 12): "kickboxing",
              datetime.date(2026, 11, 13): "Superior B na academia"}
-quest = especiais.get(hoje, quests[dow])
 
 def h32(n):
     M = 0xffffffff
@@ -35,20 +32,45 @@ def _kick_days():
 KICK = _kick_days()
 def kick_sabado(k):
     return k in KICK
-if n < 1:
-    titulo, msg = "Físico dos Deuses", "A campanha ainda não começou."
-elif n > 180:
-    titulo, msg = "Campanha concluída", "Os 180 dias acabaram. Abra o app para ver sua retrospectiva e começar a próxima temporada."
-elif noite:
-    titulo, msg = "Sistema", f"Dia {n} de 180. Já registrou o dia? Conte ao Sistema o que treinou e comeu antes de dormir."
-    if kick_sabado(n + 1):
-        msg = f"Dia {n} de 180. Sinal detectado para amanhã cedo. Conclua a quest de hoje no app para revelar o boss de sábado."
-else:
-    chefe = " Hoje é dia de CHEFÃO." if n % 30 == 0 else ""
-    titulo, msg = "Bom dia, Vitor", f"Dia {n} de 180: {quest}.{chefe} Abra o app e faça o check-in."
 import urllib.parse
-qs = urllib.parse.urlencode({"title": titulo, "click": os.environ["APP_URL"], "tags": "crossed_swords"})
-req = urllib.request.Request("https://ntfy.sh/" + os.environ["NTFY_TOPIC"] + "?" + qs, data=msg.encode("utf-8"), method="POST",
-                             headers={"Content-Type": "text/plain; charset=utf-8"})
-urllib.request.urlopen(req, timeout=20)
-print("enviado:", titulo, "|", msg)
+
+def mensagem(dia, noite):
+    n = (dia - inicio).days + 1
+    if n < 1:
+        return None
+    if n > 180:
+        return None if noite or n > 181 else ("Campanha concluída", "Os 180 dias acabaram. Abra o app para ver sua retrospectiva e começar a próxima temporada.")
+    if noite:
+        if kick_sabado(n + 1):
+            return ("Sistema", f"Dia {n} de 180. Sinal detectado para amanhã cedo. Conclua a quest de hoje no app para revelar o boss de sábado.")
+        return ("Sistema", f"Dia {n} de 180. Já registrou o dia? Conte ao Sistema o que treinou e comeu antes de dormir.")
+    quest = especiais.get(dia, quests[dia.weekday()])
+    chefe = " Hoje é dia de CHEFÃO." if n % 30 == 0 else ""
+    return ("Bom dia, Vitor", f"Dia {n} de 180: {quest}.{chefe} Abra o app e faça o check-in.")
+
+def enviar(titulo, msg, quando=None):
+    params = {"title": titulo, "click": os.environ["APP_URL"], "tags": "crossed_swords"}
+    if quando is not None:
+        params["at"] = str(int(quando.timestamp()))
+    req = urllib.request.Request("https://ntfy.sh/" + os.environ["NTFY_TOPIC"] + "?" + urllib.parse.urlencode(params),
+                                 data=msg.encode("utf-8"), method="POST", headers={"Content-Type": "text/plain; charset=utf-8"})
+    urllib.request.urlopen(req, timeout=20)
+    print("enviado" if quando is None else "agendado para " + quando.isoformat(), "|", titulo, "|", msg)
+
+# O agendamento do GitHub atrasa horas. Por isso, uma execução por dia (à tarde) deixa as mensagens
+# agendadas no próprio ntfy: a da noite de hoje (20h30) e a da manhã de amanhã (7h40).
+if os.environ.get("MODO") == "agora":
+    m = mensagem(hoje, False)
+    if m:
+        enviar(*m)
+else:
+    noite_hoje = datetime.datetime.combine(hoje, datetime.time(20, 30), tz)
+    m = mensagem(hoje, True)
+    if m and agora < noite_hoje:
+        enviar(*m, quando=noite_hoje)
+    elif m and agora.hour < 23:
+        enviar(*m)
+    amanha = hoje + datetime.timedelta(days=1)
+    m = mensagem(amanha, False)
+    if m:
+        enviar(*m, quando=datetime.datetime.combine(amanha, datetime.time(7, 40), tz))
