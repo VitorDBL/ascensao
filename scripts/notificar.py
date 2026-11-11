@@ -5,9 +5,9 @@ hoje = agora.date()
 inicio = datetime.date(2026, 11, 9)
 quests = {0: "kickboxing", 1: "Superior A na academia", 2: "kickboxing", 3: "Inferior + core na academia",
           4: "Superior B na academia", 5: "desafio em casa (e refeição livre)", 6: "treino em casa"}
-especiais = {datetime.date(2026, 11, 11): "Inferior + core na academia",
+especiais = {datetime.date(2026, 11, 11): "Superior B na academia",
              datetime.date(2026, 11, 12): "kickboxing",
-             datetime.date(2026, 11, 13): "Superior B na academia"}
+             datetime.date(2026, 11, 13): "Inferior + core na academia"}
 
 def h32(n):
     M = 0xffffffff

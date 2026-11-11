@@ -113,9 +113,9 @@ function missionFor(n){
   if(n===1){m={tipo:"luta",titulo:"Aula experimental: kickboxing",tasks:["Ir na aula experimental de kickboxing","Fotos de base tiradas","Contar ao Coach como foi"],ex:[null,null,null],nota:"Primeiro dia da campanha. Só aparecer já vale."};}
   const gym=(w,nota)=>{const P=PLAN[w];return{tipo:"academia",titulo:P.t,tasks:P.ex.map(e=>e.n+" "+e.s+"x"+e.lo+"-"+e.hi+(e.tempo?"s":"")).concat(["Registrar as cargas na aba Treino"]),ex:P.ex.concat([null]),nota};};
   if(n===2)m=gym(2,"Semana 1: Superior A.");
-  if(n===3)m=gym(4,"Semana 1: hoje inferior + core, amanhã kickboxing.");
+  if(n===3)m=gym(5,"Semana 1: hoje Superior B, amanhã kickboxing.");
   if(n===4){m={tipo:"luta",titulo:"Kickboxing",tasks:["Ir na aula de kickboxing","Registrar as técnicas na aba Treino"],ex:[null,null],nota:"Semana 1: o kickboxing vem na quinta. Coquilha e hidratação."};}
-  if(n===5)m=gym(5,"Semana 1: fecha a semana com Superior B.");
+  if(n===5)m=gym(4,"Semana 1: fecha a semana com inferior + core.");
   if(returning(n)&&m.tipo==="academia")m.nota="Retomada depois da recuperação: faça 1 série a menos em cada exercício. "+m.nota;
   if(isMBoss(n)){m.boss=true;m.titulo="Chefão da fase "+(L+1)+": "+m.titulo;["Teste: máximo de flexões seguidas","Teste: prancha máxima","Pesar de manhã","Fotos frente, perfil e costas para o novo scan"].forEach(t=>{m.tasks.push(t);m.ex.push(null);});}
   m.livre=wd===6;
@@ -652,7 +652,7 @@ function md(t){const lines=esc(t).split("\n");let h="",inList=false;
   if(inList)h+="</ul>";return h;}
 function dataSummary(days){
   const t=Math.min(TOTAL,TODAY()),lines=[];
-  lines.push(`SEMANA 1: seg 09/11 aula experimental de kickboxing, ter 10/11 Superior A, qua 11/11 Inferior + core, qui 12/11 kickboxing, sex 13/11 Superior B. Ele decidiu: a luta é KICKBOXING (treina com um amigo), não vai fazer jiu-jitsu. Rotina fixa: seg e qua kickboxing, ter Superior A, qui Inferior + core, sex Superior B, fim de semana em casa. Cerca de 1 sábado por mês tem boss surpresa: aula de kickboxing das 10h30 às 12h, revelado só quando ele conclui a quest de sexta; nunca revele antes.`);
+  lines.push(`SEMANA 1: seg 09/11 aula experimental de kickboxing, ter 10/11 Superior A, qua 11/11 Superior B, qui 12/11 kickboxing, sex 13/11 Inferior + core. Ele decidiu: a luta é KICKBOXING (treina com um amigo), não vai fazer jiu-jitsu. Rotina fixa: seg e qua kickboxing, ter Superior A, qui Inferior + core, sex Superior B, fim de semana em casa. Cerca de 1 sábado por mês tem boss surpresa: aula de kickboxing das 10h30 às 12h, revelado só quando ele conclui a quest de sexta; nunca revele antes.`);
   lines.push(`PERFIL: Vitor, 21 anos, 1,76 m. Começou em 09/11/2026 com 90 kg (tinha 110 no início do ano, chegou a 86, ficou 2 meses parado após cirurgia de fimose). Meta: 75 kg até 07/05/2027 (180 dias). Usa Mounjaro com acompanhamento médico e relata comer por ansiedade. Rotina: seg e qua luta, ter/qui/sex academia, fim de semana treinos em casa. Trabalha 9h-16h e faz faculdade.`);
   lines.push(`HOJE: dia ${t} de 180 (${brD(new Date())}). Peso atual registrado ${fmt(curW())} kg. Rota planejada hoje ${fmt(plannedW(t))} kg. Sequência ${streak()} dias. Bosses vencidos ${bossesBeaten().t}.`);
   lines.push("O Vitor não gosta de se medir com fita: acompanhe só peso, fotos e treino, e nunca peça medidas.");lines.push("CHECK-INS: "+(checkins().map(c=>`${brS(parseISO(c.d))} ${fmt(c.w)}kg${c.waist?" cintura "+c.waist:""}`).join("; ")||"nenhum"));
